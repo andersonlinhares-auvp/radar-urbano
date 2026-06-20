@@ -7,3 +7,60 @@ body {
   background: var(--ru-papel);
   color: var(--ru-tinta);
 }
+
+/* ===== Radar mark animations (from the design system) ===== */
+@keyframes ru-sweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ru-ping {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+.ru-sweep {
+  animation: ru-sweep 5s linear infinite;
+  transform-origin: center;
+}
+
+.ru-ping {
+  animation: ru-ping 2.4s ease-out infinite;
+}
+
+/* ===== MapLibre popup styling, faithful to the design panels ===== */
+.maplibregl-popup-content {
+  background: var(--ru-superficie);
+  border: 1px solid var(--ru-linha);
+  border-radius: 8px;
+  padding: 0;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  overflow: hidden;
+}
+
+.maplibregl-popup-close-button {
+  font-size: 18px;
+  color: var(--ru-ardosia);
+  padding: 2px 8px;
+}
+
+.maplibregl-popup-tip {
+  border-top-color: var(--ru-superficie) !important;
+  border-bottom-color: var(--ru-superficie) !important;
+}
+
+/* ===== Custom incident markers ===== */
+.ru-marker {
+  cursor: pointer;
+}

@@ -3,3 +3,9 @@ node_modules
 **/.next
 **/dist
 .git
+.env
+.env.local
+**/.env
+**/.env.local
+*.tsbuildinfo
+.superpowers

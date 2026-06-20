@@ -14,14 +14,33 @@ export interface CreateIncidentInput {
   occurredAt: Date;
 }
 
-export async function listIncidentsGeoJSON() {
-  const rows = await db.execute(sql`
-    SELECT id, ref_code, category_slug, status, trust_score,
-           ST_X(location::geometry) AS lng, ST_Y(location::geometry) AS lat
-    FROM incidents
-    ORDER BY occurred_at DESC
-    LIMIT 1000
-  `);
+interface IncidentRow extends Record<string, unknown> {
+  id: string;
+  ref_code: string;
+  category_slug: string;
+  status: string;
+  trust_score: number;
+  lng: number;
+  lat: number;
+}
+
+export async function listIncidentsGeoJSON(bbox?: [number, number, number, number]) {
+  const rows = bbox
+    ? await db.execute<IncidentRow>(sql`
+        SELECT id, ref_code, category_slug, status, trust_score,
+               ST_X(location::geometry) AS lng, ST_Y(location::geometry) AS lat
+        FROM incidents
+        WHERE location && ST_MakeEnvelope(${bbox[0]}, ${bbox[1]}, ${bbox[2]}, ${bbox[3]}, 4326)::geography
+        ORDER BY occurred_at DESC
+        LIMIT 1000
+      `)
+    : await db.execute<IncidentRow>(sql`
+        SELECT id, ref_code, category_slug, status, trust_score,
+               ST_X(location::geometry) AS lng, ST_Y(location::geometry) AS lat
+        FROM incidents
+        ORDER BY occurred_at DESC
+        LIMIT 1000
+      `);
   return {
     type: 'FeatureCollection' as const,
     features: rows.map((r) => ({

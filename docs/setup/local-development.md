@@ -56,7 +56,7 @@ REDIS_URL=redis://redis:6379
 AUTH_SECRET=troque-por-uma-string-aleatoria-de-32-bytes
 AUTH_URL=http://localhost:3000
 
-# OAuth GitHub (opcional — autenticação por e-mail funciona sem)
+# OAuth GitHub (único provedor configurado na v0.1; e-mail/credenciais é trabalho futuro)
 AUTH_GITHUB_ID=
 AUTH_GITHUB_SECRET=
 
@@ -91,7 +91,7 @@ pnpm db:migrate
 pnpm db:seed
 ```
 
-- `db:migrate`: aplica as migrações SQL em `packages/db/drizzle/` no banco PostgreSQL.
+- `db:migrate`: aplica as migrações SQL em `packages/db/migrations/` no banco PostgreSQL.
 - `db:seed`: popula as tabelas de referência (categorias, fontes iniciais).
 
 ### 6. Acesse a aplicação

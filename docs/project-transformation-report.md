@@ -66,7 +66,7 @@ O ponto de partida foi o projeto **StreetSignal**, uma aplicação de crowdsourc
 - Schema Drizzle com **16 tabelas**: `users`, `accounts`, `sessions`, `verification_tokens`, `incidents`, `incident_locations`, `incident_evidences`, `incident_verifications`, `incident_status_history`, `ingestion_sources`, `ingestion_snapshots`, `risk_scores`, `regions`, `alert_subscriptions`, `notifications`, `reputation_events`.
 - Tipo geoespacial `geography(Point,4326)` via `customType` do Drizzle (PostGIS).
 - Índices GiST em todas as colunas geoespaciais.
-- Migrações SQL versionadas em `packages/db/drizzle/`.
+- Migrações SQL versionadas em `packages/db/migrations/`.
 - Seed com categorias e fontes iniciais.
 
 #### `packages/data-ingestion` — ingestão extensível
@@ -78,10 +78,10 @@ O ponto de partida foi o projeto **StreetSignal**, uma aplicação de crowdsourc
 
 #### `apps/web` — aplicação Next.js 15
 
-- **Auth.js v5:** OAuth via GitHub e autenticação por credenciais. Sessões JWT. Integrado ao schema Drizzle via `@auth/drizzle-adapter`.
+- **Auth.js v5:** OAuth via GitHub. Sessões JWT. Integrado ao schema Drizzle via `@auth/drizzle-adapter`. Autenticação por e-mail/credenciais não está configurada na v0.1 — é trabalho futuro.
 - **Mapa `/mapa`:** MapLibre GL JS com heatmap de incidentes. Filtros por categoria e período. Marcadores com prefixo `RU-XXXX`.
 - **Painel `/painel`:** ranking de risco por bairro, visualização de snapshots históricos.
-- **API REST `/api/incidents`:** GET com filtro por bounding-box, POST para criação (autenticado).
+- **API REST `/api/incidents`:** GET com filtro por bounding-box, POST para criação. Na v0.1 o POST é aberto/anônimo (aceita `sourceId`/`authorId` do cliente, sem autenticação); exigir login e derivar `authorId` da sessão é item de backlog.
 - **Design system:** Tailwind com tokens de `packages/config` — paleta Petróleo/Sinal, fontes IBM Plex, status de risco (BAIXO/MÉDIO/ALTO/CRÍTICO) com cor + rótulo + ícone (acessibilidade WCAG 4.5:1).
 
 #### `apps/worker` — processamento assíncrono (BullMQ)
@@ -196,18 +196,20 @@ Os próximos passos estão ordenados por impacto esperado para uma operação re
 
 ## 5. Backlog sugerido para v1 (priorizado)
 
-| Prioridade | Item                                            | Justificativa                                                         |
-| ---------- | ----------------------------------------------- | --------------------------------------------------------------------- |
-| 1          | Ingestão real ISP-RJ                            | Dados oficiais são o diferencial competitivo da plataforma            |
-| 2          | Polígonos de bairros do Rio (GeoJSON oficial)   | Habilita risk scores e painel por bairro real                         |
-| 3          | UI de moderação                                 | Sem moderação, a qualidade dos dados degrada rapidamente              |
-| 4          | Geocoding por seleção no mapa (UX de relato)    | Reduz incidentes mal georreferenciados                                |
-| 5          | Notificações push/e-mail reais                  | Schema pronto; falta apenas integração com provedor                   |
-| 6          | Retenção/limpeza de snapshots em `risk_scores`  | Controle de crescimento do banco em operação contínua                 |
-| 7          | Testes E2E (Playwright)                         | Garante regressão em fluxos críticos antes do deploy                  |
-| 8          | Plugin ESLint do Next.js (`eslint-config-next`) | Captura erros específicos de App Router não cobertos pelo config base |
-| 9          | Endurecer SQL de intervalo no worker            | Queries com `NOW() - INTERVAL '...'` devem usar parâmetros tipados    |
-| 10         | Deploy em produção (VPS + domínio + TLS)        | Pré-requisito para operação real e coleta de dados reais              |
+| Prioridade | Item                                                                                                                                                                               | Justificativa                                                                                                      |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| 1          | Ingestão real ISP-RJ                                                                                                                                                               | Dados oficiais são o diferencial competitivo da plataforma                                                         |
+| 2          | Polígonos de bairros do Rio (GeoJSON oficial)                                                                                                                                      | Habilita risk scores e painel por bairro real                                                                      |
+| 3          | UI de moderação                                                                                                                                                                    | Sem moderação, a qualidade dos dados degrada rapidamente                                                           |
+| 4          | Geocoding por seleção no mapa (UX de relato)                                                                                                                                       | Reduz incidentes mal georreferenciados                                                                             |
+| 5          | Notificações push/e-mail reais                                                                                                                                                     | Schema pronto; falta apenas integração com provedor                                                                |
+| 6          | Retenção/limpeza de snapshots em `risk_scores`                                                                                                                                     | Controle de crescimento do banco em operação contínua                                                              |
+| 7          | Testes E2E (Playwright)                                                                                                                                                            | Garante regressão em fluxos críticos antes do deploy                                                               |
+| 8          | Plugin ESLint do Next.js (`eslint-config-next`)                                                                                                                                    | Captura erros específicos de App Router não cobertos pelo config base                                              |
+| 9          | Endurecer SQL de intervalo no worker                                                                                                                                               | Queries com `NOW() - INTERVAL '...'` devem usar parâmetros tipados                                                 |
+| 10         | Deploy em produção (VPS + domínio + TLS)                                                                                                                                           | Pré-requisito para operação real e coleta de dados reais                                                           |
+| 11         | Atribuir `neighborhood_id` aos incidentes via point-in-polygon (ST_Within/ST_Contains) — sem isso o risk score por bairro fica inerte (o worker faz INNER JOIN em neighborhood_id) | Sem polígonos de bairros carregados e neighborhood_id preenchido, o recompute de risco não produz resultados úteis |
+| 12         | Autenticar/autorizar `POST /api/incidents` e derivar `authorId` da sessão (na v0.1 a criação é aberta)                                                                             | Necessário para vincular reputação ao autor real e evitar spam anônimo                                             |
 
 ---
 

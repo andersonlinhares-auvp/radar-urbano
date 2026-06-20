@@ -4,18 +4,18 @@
 
 O Radar Urbano foi construído a partir de uma auditoria do projeto de referência **StreetSignal**, uma aplicação de crowdsourcing de ocorrências urbanas. A tabela abaixo consolida o que existia e o que foi adotado ou substituído.
 
-| Aspecto              | StreetSignal (original)        | Radar Urbano (adotado)                  | Justificativa                                                              |
-| -------------------- | ------------------------------ | --------------------------------------- | -------------------------------------------------------------------------- |
-| Framework web        | Next.js 14                     | Next.js 15 (App Router)                 | Server Components e melhor suporte a streaming                             |
-| Banco de dados       | Supabase (Postgres gerenciado) | Postgres + PostGIS (Docker)             | Controle total, extensão geoespacial nativa, sem vendor lock-in            |
-| Mapa                 | Leaflet                        | MapLibre GL JS                          | WebGL, tiles vetoriais, performance em mobile, licença open-source         |
-| Autenticação         | Ausente (relatos anônimos)     | Auth.js v5 (OAuth GitHub + credenciais) | Necessidade de reputação de usuário e moderação autenticada                |
-| Sistema de confiança | Ausente                        | Trust Score (`packages/core`)           | Qualidade de relatos depende de fonte, evidências e histórico do autor     |
-| Ingestão de dados    | Ausente                        | `packages/data-ingestion` + adapters    | Arquitetura extensível para fontes oficiais (ISP-RJ) e parceiras           |
-| ORM / Schema         | SQL manual                     | Drizzle ORM + migrações versionadas     | Type-safety, migrações auditáveis, integração com PostGIS via `customType` |
-| Workers / filas      | Ausentes                       | BullMQ + Redis (`apps/worker`)          | Recompute de risco assíncrono sem bloquear a camada web                    |
-| Tipagem              | Parcial                        | TypeScript strict em todo o monorepo    | Prevenção de bugs, refatoração segura                                      |
-| Testes               | Ausentes                       | Vitest (TDD) em `packages/core` e web   | Regras de domínio críticas validadas antes da implementação                |
+| Aspecto              | StreetSignal (original)        | Radar Urbano (adotado)                | Justificativa                                                              |
+| -------------------- | ------------------------------ | ------------------------------------- | -------------------------------------------------------------------------- |
+| Framework web        | Next.js 14                     | Next.js 15 (App Router)               | Server Components e melhor suporte a streaming                             |
+| Banco de dados       | Supabase (Postgres gerenciado) | Postgres + PostGIS (Docker)           | Controle total, extensão geoespacial nativa, sem vendor lock-in            |
+| Mapa                 | Leaflet                        | MapLibre GL JS                        | WebGL, tiles vetoriais, performance em mobile, licença open-source         |
+| Autenticação         | Ausente (relatos anônimos)     | Auth.js v5 (OAuth GitHub)             | Necessidade de reputação de usuário e moderação autenticada                |
+| Sistema de confiança | Ausente                        | Trust Score (`packages/core`)         | Qualidade de relatos depende de fonte, evidências e histórico do autor     |
+| Ingestão de dados    | Ausente                        | `packages/data-ingestion` + adapters  | Arquitetura extensível para fontes oficiais (ISP-RJ) e parceiras           |
+| ORM / Schema         | SQL manual                     | Drizzle ORM + migrações versionadas   | Type-safety, migrações auditáveis, integração com PostGIS via `customType` |
+| Workers / filas      | Ausentes                       | BullMQ + Redis (`apps/worker`)        | Recompute de risco assíncrono sem bloquear a camada web                    |
+| Tipagem              | Parcial                        | TypeScript strict em todo o monorepo  | Prevenção de bugs, refatoração segura                                      |
+| Testes               | Ausentes                       | Vitest (TDD) em `packages/core` e web | Regras de domínio críticas validadas antes da implementação                |
 
 ## Subsistemas do Radar Urbano
 
@@ -47,11 +47,11 @@ O Radar Urbano foi construído a partir de uma auditoria do projeto de referênc
 
 ### Banco de dados
 
-Postgres 16 com extensão PostGIS 3.4. Schema gerenciado via Drizzle ORM com migrações SQL versionadas em `packages/db/drizzle/`. 16 tabelas cobrindo autenticação, incidentes, georreferenciamento, moderação, pontuação de risco, alertas e notificações. SRID 4326 (WGS84) em todas as colunas geoespaciais.
+Postgres 16 com extensão PostGIS 3.4. Schema gerenciado via Drizzle ORM com migrações SQL versionadas em `packages/db/migrations/`. 16 tabelas cobrindo autenticação, incidentes, georreferenciamento, moderação, pontuação de risco, alertas e notificações. SRID 4326 (WGS84) em todas as colunas geoespaciais.
 
 ### Autenticação
 
-Auth.js v5 configurado em `apps/web/src/auth.ts`. Suporta OAuth via GitHub e sessions JWT. Tabelas Auth.js (`users`, `accounts`, `sessions`, `verification_tokens`) integradas ao schema Drizzle.
+Auth.js v5 configurado em `apps/web/src/auth.ts`. Suporta OAuth via GitHub e sessions JWT. Autenticação por e-mail/credenciais não está configurada na v0.1 — é trabalho futuro. Tabelas Auth.js (`users`, `accounts`, `sessions`, `verification_tokens`) integradas ao schema Drizzle.
 
 ### Mapas
 
@@ -77,6 +77,6 @@ Recompute automático a cada hora pelo worker `risk`. Algoritmo em `packages/cor
 
 1. **Supabase → Postgres+PostGIS próprio**: independência de plataforma, controle de versão da extensão geoespacial, sem custo de egress.
 2. **Leaflet → MapLibre GL**: renderização WebGL, suporte a estilos vetoriais, performance superior em dispositivos móveis.
-3. **Relatos anônimos → Auth obrigatória para criar**: viabiliza o sistema de reputação de autores e reduz spam.
+3. **Relatos anônimos → Auth.js com OAuth GitHub**: viabiliza o sistema de reputação de autores e moderação. Na v0.1 o `POST /api/incidents` ainda aceita `sourceId`/`authorId` fornecidos pelo cliente (criação aberta); exigir sessão autenticada e derivar `authorId` da sessão é item de backlog.
 4. **Sem trust → Trust Score assimétrico**: penalidade por relato rejeitado é 1,5× maior que o bônus por confirmação (deliberado — relatos falsos devem custar mais).
 5. **Sem ingestão → SourceAdapter extensível**: arquitetura preparada para fontes oficiais sem implementar scraping.

@@ -66,20 +66,20 @@ radar-urbano/                          # monorepo pnpm
 
 ## Stack
 
-| Camada            | Tecnologia                                         |
-| ----------------- | -------------------------------------------------- |
-| Framework web     | Next.js 15 (App Router) + React 19                 |
-| Linguagem         | TypeScript 5 (strict em todos os pacotes)          |
-| Estilo            | Tailwind CSS 3 + tokens de design customizados     |
-| ORM / Schema      | Drizzle ORM + drizzle-kit                          |
-| Banco de dados    | PostgreSQL 16 + PostGIS 3.4 (SRID 4326 / WGS84)    |
-| Filas assíncronas | BullMQ 5 + Redis 7                                 |
-| Autenticação      | Auth.js v5 (OAuth GitHub + credenciais)            |
-| Mapa              | MapLibre GL JS 4 (WebGL, tiles vetoriais)          |
-| Testes            | Vitest 2                                           |
-| Gerenciador       | pnpm 9 (workspaces)                                |
-| CI                | GitHub Actions (lint → typecheck → test → build)   |
-| Containers        | Docker Compose (postgres/redis/web/worker/adminer) |
+| Camada            | Tecnologia                                                      |
+| ----------------- | --------------------------------------------------------------- |
+| Framework web     | Next.js 15 (App Router) + React 19                              |
+| Linguagem         | TypeScript 5 (strict em todos os pacotes)                       |
+| Estilo            | Tailwind CSS 3 + tokens de design customizados                  |
+| ORM / Schema      | Drizzle ORM + drizzle-kit                                       |
+| Banco de dados    | PostgreSQL 16 + PostGIS 3.4 (SRID 4326 / WGS84)                 |
+| Filas assíncronas | BullMQ 5 + Redis 7                                              |
+| Autenticação      | Auth.js v5 (OAuth GitHub; e-mail/credenciais é trabalho futuro) |
+| Mapa              | MapLibre GL JS 4 (WebGL, tiles vetoriais)                       |
+| Testes            | Vitest 2                                                        |
+| Gerenciador       | pnpm 9 (workspaces)                                             |
+| CI                | GitHub Actions (lint → typecheck → test → build)                |
+| Containers        | Docker Compose (postgres/redis/web/worker/adminer)              |
 
 ---
 
@@ -149,7 +149,7 @@ pnpm db:seed       # popula tabelas de referência
 - [x] Schema completo (16 tabelas, PostGIS, SRID 4326)
 - [x] 19 categorias de incidentes para o contexto brasileiro
 - [x] Trust Score e Risk Score com testes Vitest
-- [x] Auth.js v5 (OAuth GitHub + credenciais)
+- [x] Auth.js v5 (OAuth GitHub)
 - [x] API REST `/api/incidents` (GET bbox + POST)
 - [x] Mapa interativo MapLibre GL com heatmap
 - [x] Painel de risco por bairro
@@ -191,4 +191,4 @@ Para bugs e ideias use os [Issue Templates](.github/ISSUE_TEMPLATE/).
 
 ## Licença
 
-[MIT](LICENSE) © 2024 Contribuidores do Radar Urbano
+[MIT](LICENSE) © 2026 Contribuidores do Radar Urbano

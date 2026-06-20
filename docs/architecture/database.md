@@ -2,7 +2,7 @@
 
 ## Visão geral
 
-O Radar Urbano usa **PostgreSQL 16** com a extensão **PostGIS 3.4** (imagem Docker `postgis/postgis:16-3.4`). O schema é gerenciado via **Drizzle ORM** com migrações SQL versionadas em `packages/db/drizzle/`. São 16 tabelas no total, divididas em grupos funcionais.
+O Radar Urbano usa **PostgreSQL 16** com a extensão **PostGIS 3.4** (imagem Docker `postgis/postgis:16-3.4`). O schema é gerenciado via **Drizzle ORM** com migrações SQL versionadas em `packages/db/migrations/`. São 16 tabelas no total, divididas em grupos funcionais.
 
 **SRID:** todas as colunas geoespaciais usam **SRID 4326** (WGS84 — latitude/longitude decimais).
 **Índices GiST:** criados em todas as colunas `geography` e `geometry` para buscas espaciais eficientes.
@@ -279,11 +279,11 @@ O `drizzle-kit` não reconhece `geography` como tipo nativo do PostgreSQL. Ao ex
 geography(Point,4326)
 ```
 
-**A migração em `packages/db/drizzle/` foi corrigida manualmente** e contém um cabeçalho `NOTE` documentando isso. **Nunca delete e regenere a migração sem aplicar essa correção**; o SQL com aspas é inválido e falhará no PostgreSQL.
+**A migração em `packages/db/migrations/` foi corrigida manualmente** e contém um cabeçalho `NOTE` documentando isso. **Nunca delete e regenere a migração sem aplicar essa correção**; o SQL com aspas é inválido e falhará no PostgreSQL.
 
 Se for necessário regenerar:
 
 1. Execute `pnpm --filter @radar-urbano/db generate`.
 2. Abra o arquivo `.sql` gerado.
-3. Substitua todas as ocorrências de `"geography(Point,4326)"` por `geography(Point,4326)` e `"geography(Polygon,4326)"` pelo equivalente sem aspas.
+3. Substitua todas as ocorrências de `"geography(Point,4326)"` por `geography(Point,4326)` (incidentes e alert_subscriptions) e `"geometry(MultiPolygon,4326)"` por `geometry(MultiPolygon,4326)` (regions e neighborhoods).
 4. Valide o SQL antes de aplicar.

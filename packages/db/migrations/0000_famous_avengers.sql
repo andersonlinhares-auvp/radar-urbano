@@ -1,3 +1,9 @@
+-- NOTE: This migration was hand-patched and must NOT be regenerated without care.
+-- drizzle-kit's parseType() does not recognise "geography" as a native PG type and
+-- would emit it quoted (e.g. "geography(Point,4326)") which is invalid SQL.
+-- If you ever regenerate this migration, remove the double-quotes around every
+-- geography(...) column type in the generated SQL before applying it.
+-- The geometry(...) types are emitted correctly (unquoted) by drizzle-kit.
 CREATE TYPE "public"."evidence_kind" AS ENUM('IMAGE', 'VIDEO');--> statement-breakpoint
 CREATE TYPE "public"."incident_status" AS ENUM('PENDING', 'CONFIRMED', 'REJECTED', 'RESOLVED');--> statement-breakpoint
 CREATE TYPE "public"."notification_kind" AS ENUM('CRITICAL', 'ATTENTION', 'VERIFIED', 'CONFIRMATION', 'DIGEST');--> statement-breakpoint
@@ -137,7 +143,8 @@ CREATE TABLE IF NOT EXISTS "users" (
 CREATE TABLE IF NOT EXISTS "verification_tokens" (
 	"identifier" text NOT NULL,
 	"token" text NOT NULL,
-	"expires" timestamp with time zone NOT NULL
+	"expires" timestamp with time zone NOT NULL,
+	CONSTRAINT "verification_tokens_identifier_token_pk" PRIMARY KEY("identifier","token")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "verifications" (

@@ -13,6 +13,22 @@ import {
 } from 'drizzle-orm/pg-core';
 
 // PostGIS geography(Point,4326) e geometry(MultiPolygon,4326) via customType
+//
+// WARNING — drizzle-kit quoting issue:
+// drizzle-kit's parseType() recognises "geometry" as a native PG type and emits it
+// unquoted, but "geography" is NOT in its pgNativeTypes list. As a result, running
+// `drizzle-kit generate` would emit  "geography(Point,4326)"  (quoted) which is
+// invalid SQL and would break the migration.
+//
+// WORKAROUND: DO NOT delete and regenerate the migration file.  If you ever need to
+// regenerate, you must manually remove the double-quotes around geography column types
+// in the new *.sql file, e.g. change
+//   "geography(Point,4326)"
+// to
+//   geography(Point,4326)
+//
+// The SRID and subtype constraints (Point,4326) and (MultiPolygon,4326) MUST be
+// preserved exactly — they are what PostGIS needs for spatial indexing.
 const geographyPoint = customType<{ data: string }>({
   dataType: () => 'geography(Point,4326)',
 });
@@ -78,11 +94,15 @@ export const sessions = pgTable('sessions', {
   expires: timestamp('expires', { withTimezone: true }).notNull(),
 });
 
-export const verificationTokens = pgTable('verification_tokens', {
-  identifier: text('identifier').notNull(),
-  token: text('token').notNull(),
-  expires: timestamp('expires', { withTimezone: true }).notNull(),
-});
+export const verificationTokens = pgTable(
+  'verification_tokens',
+  {
+    identifier: text('identifier').notNull(),
+    token: text('token').notNull(),
+    expires: timestamp('expires', { withTimezone: true }).notNull(),
+  },
+  (t) => ({ pk: primaryKey({ columns: [t.identifier, t.token] }) }),
+);
 
 export const sources = pgTable('sources', {
   id: uuid('id').defaultRandom().primaryKey(),

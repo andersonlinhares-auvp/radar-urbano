@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS "accounts" (
 CREATE TABLE IF NOT EXISTS "alert_subscriptions" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" uuid NOT NULL,
-	"center" "geography(Point,4326)" NOT NULL,
+	"center" geography(Point,4326) NOT NULL,
 	"radius_km" double precision DEFAULT 2 NOT NULL,
 	"categories" text[],
 	"min_severity" text DEFAULT 'ATTENTION' NOT NULL,
@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS "incidents" (
 	"author_id" uuid,
 	"title" text NOT NULL,
 	"description" text,
-	"location" "geography(Point,4326)" NOT NULL,
+	"location" geography(Point,4326) NOT NULL,
 	"neighborhood_id" uuid,
 	"occurred_at" timestamp with time zone NOT NULL,
 	"status" "incident_status" DEFAULT 'PENDING' NOT NULL,

@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import '@radar-urbano/config/tokens.css';
+
+body {
+  background: var(--ru-papel);
+  color: var(--ru-tinta);
+}

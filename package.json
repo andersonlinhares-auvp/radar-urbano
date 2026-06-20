@@ -1,0 +1,33 @@
+{
+  "name": "radar-urbano",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@9.12.0",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "build": "pnpm -r build",
+    "db:migrate": "pnpm --filter @radar-urbano/db migrate",
+    "db:seed": "pnpm --filter @radar-urbano/db seed",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "eslint": "^9.13.0",
+    "typescript-eslint": "^8.11.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs,json,md,css}": "prettier --write",
+    "*.{ts,tsx}": "eslint --fix"
+  }
+}

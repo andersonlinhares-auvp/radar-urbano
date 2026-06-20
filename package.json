@@ -15,6 +15,7 @@
     "build": "pnpm -r build",
     "db:migrate": "pnpm --filter @radar-urbano/db migrate",
     "db:seed": "pnpm --filter @radar-urbano/db seed",
+    "db:seed:demo": "pnpm --filter @radar-urbano/db seed:demo",
     "prepare": "husky"
   },
   "devDependencies": {

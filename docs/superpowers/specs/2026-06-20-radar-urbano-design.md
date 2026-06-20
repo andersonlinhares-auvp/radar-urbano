@@ -70,6 +70,8 @@ Entidades e relações principais (detalhe completo em `docs/architecture/databa
 - **Region** — `id, name, geom geometry(MultiPolygon,4326)`
 - **RiskScore** — `id, scope (STREET|NEIGHBORHOOD|REGION), refId, windowStart, windowEnd, score (0..100), computedAt` (snapshot)
 - **EvidenceAsset** — `id, incidentId, url, kind (IMAGE|VIDEO), createdAt`
+- **AlertSubscription** — `id, userId, center geography(Point), radiusKm, categories[], minSeverity, channels (IN_APP|PUSH|EMAIL), active` (telas "Alertas"/"Ajustes" do design)
+- **Notification** — `id, userId, kind (CRITICAL|ATTENTION|VERIFIED|CONFIRMATION|DIGEST), incidentId?, title, body, readAt?, createdAt`
 
 Índices **GiST** em todas as colunas `geography`/`geometry`. Diagrama ER (Mermaid) no doc.
 
@@ -132,18 +134,74 @@ RiskScore(área, janela) = normalize_0..100(
 λ ≈ 0.05 (meia-vida ~14 dias); normalização por percentil sobre a distribuição da cidade.
 ```
 
-Faixas de cor: baixo `#2ECC71`, moderado `#F1C40F`, alto `#E67E22`, severo `#E74C3C`,
-crítico `#8E1B1B`. Snapshots persistidos em `RiskScore`, recalculados pelo worker.
+**Faixas de risco** (design oficial, sempre com rótulo+ícone): BAIXO `#3E8E7E` ·
+MÉDIO `#E0A93B` (texto `#B07F14`) · ALTO `#D2702F` · CRÍTICO `#A8332F`.
+**Rampa de heatmap** (densidade baixa→alta): `#3FB6A8 → #A9CF7E → #E0A93B → #D2702F → #A8332F`.
+**Rampa de confiança** (não confirmado→alta): `#DAD5C9 → #9AA4AE → #3FB6A8 → #0E5C63`.
+Risco por bairro é **decomposto por categoria** (nunca um número solto: explicado e datado).
+Snapshots persistidos em `RiskScore`, recalculados pelo worker.
 
-## 9. Design system "Radar Urbano" (padrão inicial)
+## 9. Design system "Radar Urbano" (oficial)
 
-Dark-first (UI de mapa). Substituível pelos tokens do arquivo Claude Design quando fornecido.
+Fonte: exploração de identidade visual `Radar Urbano.dc.html`. Direção escolhida:
+**Cartografia Institucional** — base da Direção 03 (Cartografia Urbana: *o mapa em primeiro lugar*,
+dado preciso, camadas explícitas) + rigor de acessibilidade e linguagem de serviço público da
+Direção 01; leveza só no app do cidadão (mobile). Resultado: "infraestrutura cívica madura, não
+produto de startup". Princípio-guia: **o mapa é o produto — operacional, não decorativo.**
 
-- **Brand/primary:** `#0EA5A4` (teal radar) · **accent:** `#38BDF8`
-- **Base/superfícies:** `#0B1220` / `#111827` / `#1F2937` · **texto:** `#E5E7EB` / `#9CA3AF`
-- **Escala de risco:** ver §8.
-- **Tipografia:** Inter (UI), JetBrains Mono (códigos `RPT-XXXX`).
-- **Espaçamento:** escala 4px. **Raio:** 8px. Componentes via Tailwind + preset compartilhado.
+**Marca / logo:** "Varredura" (radar sweep) — círculos concêntricos + cunha de varredura + ponto
+central "você, aqui". Vigilância cívica e transparente (nunca policial; sem arma/sirene/escudo).
+Geometria pura, legível a 16px, anima girando, funciona em mono e favicon.
+
+**Paleta primária — Petróleo (confiança):**
+| Token | Hex | Uso |
+|---|---|---|
+| petroleo-900 | `#072E32` | texto sobre claro |
+| petroleo-600 | `#0E5C63` | **PRIMÁRIA** (ações, links, verificado, sweep) |
+| petroleo-500 | `#11787F` | hover |
+| petroleo-400 | `#3FB6A8` | sinal sobre escuro |
+| petroleo-200 | `#B8E0D9` | fundos |
+| petroleo-100 | `#E6F2EF` | selos leves |
+
+**Paleta neutra — Tinta & Papel (quente, ~90% da UI):** Tinta `#11181F` · Grafite `#2B343D` ·
+Ardósia `#5A6470` · Névoa `#9AA4AE` · Linha `#DAD5C9` · Papel `#ECE8DF` · Superfície `#FBFAF6`.
+
+**Status de relato:** Verificado `#0E5C63` · Comunidade `#5A6470` · Atenção `#E0A93B` ·
+Crítico `#A8332F` · Resolvido `#3E8E7E`. *Vermelho reservado ao crítico.*
+
+**Paleta do mapa (base dessaturada):** Água `#CFE4EA` · Solo `#EDEAE2` · Áreas verdes `#D5E3CE` ·
+Vias `#FFFFFF` · Quadras `#DCD6CB`.
+
+**Tipografia — família IBM Plex:** Plex Serif (display editorial), Plex Sans 400–700 (títulos/corpo
+de UI), Plex Mono (coordenadas, horários, IDs `RU-XXXX`, números tabulares). Base 16px nunca menor,
+contraste mínimo 4.5:1, acentos do pt-BR com folga.
+
+**Componentes:** raio 6–8px, hairline quente `#DAD5C9`, sem sombras gratuitas. Mono p/ metadados,
+Sans p/ conteúdo, cor só quando comunica estado. Botões: primário Petróleo, secundário outline
+Petróleo, terciário neutro, crítico `#A8332F`.
+
+**Acessibilidade:** cor **sempre** acompanhada de rótulo + ícone/forma — nada depende só de cor.
+
+**Semântica de marcadores no mapa (procedência pela forma):**
+- Verificado → gota (teardrop) Petróleo com ✓
+- Oficial / órgão público → quadrado Tinta com ★ Petróleo-400
+- Comunidade → círculo vazado Ardósia
+- Atenção → gota Âmbar com `!` · Cluster → círculo Crítico com contagem
+- Ocorrências antigas **desbotam** (time decay visual). Atribuição: "© OpenStreetMap · Dados abertos PCRJ".
+
+**Estilos de mapa:** Claro (padrão/diurno) · Escuro (operacional/monitoramento) · Híbrido · Satélite.
+
+**Espaçamento:** escala 4px. Tokens publicados como CSS vars + preset Tailwind em `packages/config`.
+
+**Princípio de produto:** reputação = **precisão** dos relatos confirmados (sem curtidas, seguidores
+ou ranking público). Relato anônimo é padrão respeitado. Severidade comunicada por borda colorida.
+
+**Superfícies de UI (do design):**
+- *Desktop denso (analista):* **Mapa principal** (rail de ícones + mapa + painel lateral de
+  ocorrências) e **Painel de risco** (KPIs, tendência por hora, ranking de bairros, exportar CSV/relatório).
+- *Mobile (cidadão):* Home (risco do bairro + ação rápida), Mapa (bottom sheet), Reportar
+  (1 passo por etapa), Detalhe (linha do tempo = prova de confiança), Bairro (risco decomposto),
+  Alertas (severidade por borda), Busca (procedência visível), Perfil (reputação), Ajustes (raio/privacidade).
 
 ## 10. Governança & qualidade
 

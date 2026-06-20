@@ -41,6 +41,9 @@ importers:
       '@radar-urbano/db':
         specifier: workspace:*
         version: link:../../packages/db
+      drizzle-orm:
+        specifier: ^0.36.0
+        version: 0.36.4(@types/react@19.2.17)(postgres@3.4.9)(react@19.2.7)
       maplibre-gl:
         specifier: ^4.7.1
         version: 4.7.1

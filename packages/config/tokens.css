@@ -1,0 +1,24 @@
+:root {
+  --ru-petroleo-900: #072e32;
+  --ru-petroleo-600: #0e5c63; /* primária */
+  --ru-petroleo-500: #11787f;
+  --ru-petroleo-400: #3fb6a8;
+  --ru-petroleo-200: #b8e0d9;
+  --ru-petroleo-100: #e6f2ef;
+  --ru-tinta: #11181f;
+  --ru-grafite: #2b343d;
+  --ru-ardosia: #5a6470;
+  --ru-nevoa: #9aa4ae;
+  --ru-linha: #dad5c9;
+  --ru-papel: #ece8df;
+  --ru-superficie: #fbfaf6;
+  --ru-status-verificado: #0e5c63;
+  --ru-status-comunidade: #5a6470;
+  --ru-status-atencao: #e0a93b;
+  --ru-status-critico: #a8332f;
+  --ru-status-resolvido: #3e8e7e;
+  --ru-risco-baixo: #3e8e7e;
+  --ru-risco-medio: #e0a93b;
+  --ru-risco-alto: #d2702f;
+  --ru-risco-critico: #a8332f;
+}

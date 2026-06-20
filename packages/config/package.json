@@ -1,0 +1,14 @@
+{
+  "name": "@radar-urbano/config",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./tsconfig.json": "./tsconfig.json",
+    "./tokens.css": "./tokens.css",
+    "./tailwind-preset": "./tailwind-preset.mjs"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  }
+}

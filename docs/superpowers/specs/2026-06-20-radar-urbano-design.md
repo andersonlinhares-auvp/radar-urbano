@@ -18,16 +18,16 @@ com stack própria e portável, sem dependência obrigatória de fornecedores ge
 
 ## 2. Decisões arquiteturais (com justificativa)
 
-| Decisão | Escolha | Por quê |
-|---|---|---|
-| Estrutura | **Monorepo pnpm** (monolito modular) | Fronteiras físicas fortes, reuso entre `web`/`worker`, onboarding único |
-| Banco | **PostgreSQL + PostGIS** (self-hosted) | Geoespacial nativo, custo zero, independência de fornecedor |
-| ORM | **Drizzle ORM** | TS-first, SQL bruto e extensões PostGIS de primeira classe |
-| Auth | **Auth.js (NextAuth v5)** | Padrão Next.js; OAuth + credenciais; relato anônimo coexiste com contas |
-| Frontend | **Next.js 15** (App Router, RSC, TS, Tailwind) | SSR, DX madura, alinhado ao StreetSignal |
-| Mapas | **MapLibre GL JS** + tiles OSM | Prioridade da Fase 5; WebGL; **heatmap nativo**; sem Google |
-| Fila/jobs | **BullMQ + Redis** | Recálculo de scores e ingestão assíncrona |
-| Cache | **Redis** | Cache de heatmaps/risk score |
+| Decisão   | Escolha                                        | Por quê                                                                 |
+| --------- | ---------------------------------------------- | ----------------------------------------------------------------------- |
+| Estrutura | **Monorepo pnpm** (monolito modular)           | Fronteiras físicas fortes, reuso entre `web`/`worker`, onboarding único |
+| Banco     | **PostgreSQL + PostGIS** (self-hosted)         | Geoespacial nativo, custo zero, independência de fornecedor             |
+| ORM       | **Drizzle ORM**                                | TS-first, SQL bruto e extensões PostGIS de primeira classe              |
+| Auth      | **Auth.js (NextAuth v5)**                      | Padrão Next.js; OAuth + credenciais; relato anônimo coexiste com contas |
+| Frontend  | **Next.js 15** (App Router, RSC, TS, Tailwind) | SSR, DX madura, alinhado ao StreetSignal                                |
+| Mapas     | **MapLibre GL JS** + tiles OSM                 | Prioridade da Fase 5; WebGL; **heatmap nativo**; sem Google             |
+| Fila/jobs | **BullMQ + Redis**                             | Recálculo de scores e ingestão assíncrona                               |
+| Cache     | **Redis**                                      | Cache de heatmaps/risk score                                            |
 
 > Divergência do StreetSignal: ele usa **Supabase** (BaaS gerenciado). Trocamos por Postgres+PostGIS
 > self-hosted para atender "um comando sobe tudo", PostGIS nativo, Redis, workers e independência de
@@ -112,7 +112,7 @@ REJECTED/marcados como falsos, com retornos decrescentes (`Δ = base · 1/(1+|re
 ```ts
 interface SourceAdapter {
   id: string;
-  sourceKind: SourceKind;          // OFFICIAL | COMMUNITY | NEWS | PARTNER
+  sourceKind: SourceKind; // OFFICIAL | COMMUNITY | NEWS | PARTNER
   fetch(params): Promise<RawRecord[]>;
   normalize(raw: RawRecord): NormalizedIncident;
   // upsert é genérico (camada db), idempotente por chave natural
@@ -144,7 +144,7 @@ Snapshots persistidos em `RiskScore`, recalculados pelo worker.
 ## 9. Design system "Radar Urbano" (oficial)
 
 Fonte: exploração de identidade visual `Radar Urbano.dc.html`. Direção escolhida:
-**Cartografia Institucional** — base da Direção 03 (Cartografia Urbana: *o mapa em primeiro lugar*,
+**Cartografia Institucional** — base da Direção 03 (Cartografia Urbana: _o mapa em primeiro lugar_,
 dado preciso, camadas explícitas) + rigor de acessibilidade e linguagem de serviço público da
 Direção 01; leveza só no app do cidadão (mobile). Resultado: "infraestrutura cívica madura, não
 produto de startup". Princípio-guia: **o mapa é o produto — operacional, não decorativo.**
@@ -167,7 +167,7 @@ Geometria pura, legível a 16px, anima girando, funciona em mono e favicon.
 Ardósia `#5A6470` · Névoa `#9AA4AE` · Linha `#DAD5C9` · Papel `#ECE8DF` · Superfície `#FBFAF6`.
 
 **Status de relato:** Verificado `#0E5C63` · Comunidade `#5A6470` · Atenção `#E0A93B` ·
-Crítico `#A8332F` · Resolvido `#3E8E7E`. *Vermelho reservado ao crítico.*
+Crítico `#A8332F` · Resolvido `#3E8E7E`. _Vermelho reservado ao crítico._
 
 **Paleta do mapa (base dessaturada):** Água `#CFE4EA` · Solo `#EDEAE2` · Áreas verdes `#D5E3CE` ·
 Vias `#FFFFFF` · Quadras `#DCD6CB`.
@@ -183,6 +183,7 @@ Petróleo, terciário neutro, crítico `#A8332F`.
 **Acessibilidade:** cor **sempre** acompanhada de rótulo + ícone/forma — nada depende só de cor.
 
 **Semântica de marcadores no mapa (procedência pela forma):**
+
 - Verificado → gota (teardrop) Petróleo com ✓
 - Oficial / órgão público → quadrado Tinta com ★ Petróleo-400
 - Comunidade → círculo vazado Ardósia
@@ -197,9 +198,10 @@ Petróleo, terciário neutro, crítico `#A8332F`.
 ou ranking público). Relato anônimo é padrão respeitado. Severidade comunicada por borda colorida.
 
 **Superfícies de UI (do design):**
-- *Desktop denso (analista):* **Mapa principal** (rail de ícones + mapa + painel lateral de
+
+- _Desktop denso (analista):_ **Mapa principal** (rail de ícones + mapa + painel lateral de
   ocorrências) e **Painel de risco** (KPIs, tendência por hora, ranking de bairros, exportar CSV/relatório).
-- *Mobile (cidadão):* Home (risco do bairro + ação rápida), Mapa (bottom sheet), Reportar
+- _Mobile (cidadão):_ Home (risco do bairro + ação rápida), Mapa (bottom sheet), Reportar
   (1 passo por etapa), Detalhe (linha do tempo = prova de confiança), Bairro (risco decomposto),
   Alertas (severidade por borda), Busca (procedência visível), Perfil (reputação), Ajustes (raio/privacidade).
 
@@ -234,21 +236,21 @@ README.md
 
 ## 12. Mapa Fase do brief → entregável
 
-| Fase | Entregável |
-|---|---|
-| 1 Auditoria | `docs/architecture/current-state.md` |
-| 2 Ambiente | `docker-compose.yml`, `.env.example`, `docs/setup/local-development.md` |
-| 3 Banco | `packages/db` (Drizzle+PostGIS), `docs/architecture/database.md` |
-| 4 Categorias | `core` + seed, `docs/domain/incident-categories.md` |
-| 5 Geo | MapLibre no `web`, `docs/architecture/geospatial.md` |
-| 6 Confiança | `core/trust-score`, `docs/domain/trust-score.md` |
-| 7 Ingestão | `packages/data-ingestion`, `docs/architecture/data-ingestion.md` |
-| 8 Heatmap/Risk | `web` heatmaps + `core/risk-score`, `docs/domain/risk-score.md` |
-| 9 Governança | `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `SECURITY.md`, `GOVERNANCE.md` |
-| 10 Padrões | ESLint/Prettier/EditorConfig/Husky/lint-staged, `docs/development/coding-standards.md` |
-| 11 GitHub | `.github/` completo |
-| 12 CI/CD | `.github/workflows/*`, `docs/devops/ci-cd.md` |
-| 13 Docs finais | `README.md`, `docs/`, `docs/project-transformation-report.md` |
+| Fase           | Entregável                                                                             |
+| -------------- | -------------------------------------------------------------------------------------- |
+| 1 Auditoria    | `docs/architecture/current-state.md`                                                   |
+| 2 Ambiente     | `docker-compose.yml`, `.env.example`, `docs/setup/local-development.md`                |
+| 3 Banco        | `packages/db` (Drizzle+PostGIS), `docs/architecture/database.md`                       |
+| 4 Categorias   | `core` + seed, `docs/domain/incident-categories.md`                                    |
+| 5 Geo          | MapLibre no `web`, `docs/architecture/geospatial.md`                                   |
+| 6 Confiança    | `core/trust-score`, `docs/domain/trust-score.md`                                       |
+| 7 Ingestão     | `packages/data-ingestion`, `docs/architecture/data-ingestion.md`                       |
+| 8 Heatmap/Risk | `web` heatmaps + `core/risk-score`, `docs/domain/risk-score.md`                        |
+| 9 Governança   | `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `SECURITY.md`, `GOVERNANCE.md`                |
+| 10 Padrões     | ESLint/Prettier/EditorConfig/Husky/lint-staged, `docs/development/coding-standards.md` |
+| 11 GitHub      | `.github/` completo                                                                    |
+| 12 CI/CD       | `.github/workflows/*`, `docs/devops/ci-cd.md`                                          |
+| 13 Docs finais | `README.md`, `docs/`, `docs/project-transformation-report.md`                          |
 
 ## 13. Estratégia de entrega
 

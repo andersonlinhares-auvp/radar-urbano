@@ -1,0 +1,5 @@
+* @radar-urbano/maintainers
+/packages/core/ @radar-urbano/core-contributors
+/packages/db/ @radar-urbano/core-contributors
+/apps/web/ @radar-urbano/core-contributors
+/docs/ @radar-urbano/maintainers

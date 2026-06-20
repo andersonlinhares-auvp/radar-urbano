@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     typeof body.categorySlug !== 'string' ||
     body.categorySlug.trim() === ''
   ) {
-    return NextResponse.json({ error: 'Coordenadas inválidas' }, { status: 422 });
+    return NextResponse.json({ error: 'Campo categorySlug é obrigatório' }, { status: 422 });
   }
   if (!body.sourceId || typeof body.sourceId !== 'string' || body.sourceId.trim() === '') {
     return NextResponse.json({ error: 'Campo sourceId é obrigatório' }, { status: 422 });

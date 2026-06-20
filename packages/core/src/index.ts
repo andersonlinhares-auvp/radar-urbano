@@ -1,4 +1,4 @@
 export * from './types.js';
 export * from './categories.js';
-// TODO(task-5): export * from './trust-score.js';
+export * from './trust-score.js';
 // TODO(task-6): export * from './risk-score.js';

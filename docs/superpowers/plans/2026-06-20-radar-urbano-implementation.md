@@ -50,17 +50,19 @@ radar-urbano/
 ## Task 1: Monorepo bootstrap (pnpm + TS base + lint/format)
 
 **Files:**
+
 - Create: `package.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`, `.editorconfig`, `.prettierrc`, `.prettierignore`, `.gitignore`, `.nvmrc`, `eslint.config.mjs`, `packages/config/package.json`, `packages/config/tsconfig.json`
 
 **Interfaces:**
+
 - Produces: workspace raiz com scripts `lint`, `format`, `typecheck`, `test`, `build`; preset TS em `packages/config/tsconfig.json` (extendido pelos demais pacotes via `@radar-urbano/config/tsconfig.json`).
 
 - [ ] **Step 1: Create `pnpm-workspace.yaml`**
 
 ```yaml
 packages:
-  - "apps/*"
-  - "packages/*"
+  - 'apps/*'
+  - 'packages/*'
 ```
 
 - [ ] **Step 2: Create root `package.json`**
@@ -123,6 +125,7 @@ packages:
 - [ ] **Step 4: Create `packages/config/package.json` and `packages/config/tsconfig.json`**
 
 `packages/config/package.json`:
+
 ```json
 {
   "name": "@radar-urbano/config",
@@ -139,6 +142,7 @@ packages:
 ```
 
 `packages/config/tsconfig.json`:
+
 ```json
 { "extends": "../../tsconfig.base.json", "compilerOptions": { "noEmit": true } }
 ```
@@ -146,6 +150,7 @@ packages:
 - [ ] **Step 5: Create lint/format/meta files**
 
 `.editorconfig`:
+
 ```ini
 root = true
 [*]
@@ -160,11 +165,13 @@ trim_trailing_whitespace = false
 ```
 
 `.prettierrc`:
+
 ```json
 { "semi": true, "singleQuote": true, "trailingComma": "all", "printWidth": 100 }
 ```
 
 `.prettierignore`:
+
 ```
 pnpm-lock.yaml
 **/.next
@@ -174,11 +181,13 @@ docs/design/*.html
 ```
 
 `.nvmrc`:
+
 ```
 20.11
 ```
 
 `.gitignore`:
+
 ```
 node_modules
 .next
@@ -191,6 +200,7 @@ coverage
 ```
 
 `eslint.config.mjs`:
+
 ```js
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
@@ -218,6 +228,7 @@ Expected: formatação aplicada.
 
 Run: `pnpm exec husky init`
 Then create `.husky/pre-commit`:
+
 ```sh
 pnpm exec lint-staged
 ```
@@ -236,9 +247,11 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ## Task 2: Design tokens & Tailwind preset (`packages/config`)
 
 **Files:**
+
 - Create: `packages/config/tokens.css`, `packages/config/tailwind-preset.mjs`
 
 **Interfaces:**
+
 - Produces: CSS vars `--ru-*` e preset Tailwind `radarUrbanoPreset` consumido por `apps/web`.
 
 - [ ] **Step 1: Create `packages/config/tokens.css`** (tokens verbatim do spec §9)
@@ -279,11 +292,20 @@ export const radarUrbanoPreset = {
     extend: {
       colors: {
         petroleo: {
-          100: '#e6f2ef', 200: '#b8e0d9', 400: '#3fb6a8',
-          500: '#11787f', 600: '#0e5c63', 900: '#072e32',
+          100: '#e6f2ef',
+          200: '#b8e0d9',
+          400: '#3fb6a8',
+          500: '#11787f',
+          600: '#0e5c63',
+          900: '#072e32',
         },
-        tinta: '#11181f', grafite: '#2b343d', ardosia: '#5a6470',
-        nevoa: '#9aa4ae', linha: '#dad5c9', papel: '#ece8df', superficie: '#fbfaf6',
+        tinta: '#11181f',
+        grafite: '#2b343d',
+        ardosia: '#5a6470',
+        nevoa: '#9aa4ae',
+        linha: '#dad5c9',
+        papel: '#ece8df',
+        superficie: '#fbfaf6',
         risco: { baixo: '#3e8e7e', medio: '#e0a93b', alto: '#d2702f', critico: '#a8332f' },
       },
       fontFamily: {
@@ -302,6 +324,7 @@ export default radarUrbanoPreset;
 
 Run: `pnpm --filter @radar-urbano/config typecheck`
 Expected: PASS (sem TS no preset; comando termina sem erro).
+
 ```bash
 git add packages/config
 git commit -m "feat(config): add Radar Urbano design tokens and tailwind preset
@@ -314,9 +337,11 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ## Task 3: `packages/core` scaffold + domain types
 
 **Files:**
+
 - Create: `packages/core/package.json`, `packages/core/tsconfig.json`, `packages/core/vitest.config.ts`, `packages/core/src/types.ts`, `packages/core/src/index.ts`
 
 **Interfaces:**
+
 - Produces: tipos `SourceKind`, `IncidentStatus`, `CategorySlug`, `IncidentCategory`, `RiskBand`, `TrustInput`, `RiskInput`. Pacote exporta tudo via `src/index.ts`.
 
 - [ ] **Step 1: Create `packages/core/package.json`**
@@ -341,11 +366,13 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 - [ ] **Step 2: Create `packages/core/tsconfig.json` and `vitest.config.ts`**
 
 `tsconfig.json`:
+
 ```json
 { "extends": "../../tsconfig.base.json", "include": ["src"] }
 ```
 
 `vitest.config.ts`:
+
 ```ts
 import { defineConfig } from 'vitest/config';
 export default defineConfig({ test: { globals: true, environment: 'node' } });
@@ -358,19 +385,28 @@ export type SourceKind = 'OFFICIAL' | 'COMMUNITY' | 'NEWS' | 'PARTNER';
 
 export type IncidentStatus = 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'RESOLVED';
 
-export type CategoryGroup =
-  | 'pessoa'
-  | 'patrimonio'
-  | 'violencia_armada'
-  | 'mobilidade'
-  | 'outros';
+export type CategoryGroup = 'pessoa' | 'patrimonio' | 'violencia_armada' | 'mobilidade' | 'outros';
 
 export type CategorySlug =
-  | 'roubo-celular' | 'furto-celular' | 'assalto-mao-armada' | 'tentativa-assalto'
-  | 'arrastao' | 'roubo-veiculo' | 'furto-veiculo' | 'roubo-carga' | 'golpe'
-  | 'disparo-arma' | 'tiroteio' | 'confronto-policial' | 'sequestro-relampago'
-  | 'violencia-contra-mulher' | 'assedio' | 'vandalismo' | 'area-alagada'
-  | 'via-interditada' | 'outro';
+  | 'roubo-celular'
+  | 'furto-celular'
+  | 'assalto-mao-armada'
+  | 'tentativa-assalto'
+  | 'arrastao'
+  | 'roubo-veiculo'
+  | 'furto-veiculo'
+  | 'roubo-carga'
+  | 'golpe'
+  | 'disparo-arma'
+  | 'tiroteio'
+  | 'confronto-policial'
+  | 'sequestro-relampago'
+  | 'violencia-contra-mulher'
+  | 'assedio'
+  | 'vandalismo'
+  | 'area-alagada'
+  | 'via-interditada'
+  | 'outro';
 
 export interface IncidentCategory {
   slug: CategorySlug;
@@ -417,6 +453,7 @@ export * from './risk-score.js';
 Temporariamente, `src/index.ts` exporta só `./types.js`.
 Run: `pnpm install && pnpm --filter @radar-urbano/core typecheck`
 Expected: PASS.
+
 ```bash
 git add packages/core
 git commit -m "feat(core): scaffold domain package with shared types
@@ -429,10 +466,12 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ## Task 4: Categorias brasileiras (`core`, TDD)
 
 **Files:**
+
 - Test: `packages/core/src/categories.test.ts`
 - Create: `packages/core/src/categories.ts`
 
 **Interfaces:**
+
 - Consumes: `IncidentCategory`, `CategorySlug` (Task 3).
 - Produces: `CATEGORIES: readonly IncidentCategory[]`, `getCategory(slug): IncidentCategory`, `CATEGORY_BY_SLUG: Record<CategorySlug, IncidentCategory>`.
 
@@ -484,25 +523,177 @@ Expected: FAIL ("Cannot find module './categories.js'").
 import type { CategorySlug, IncidentCategory } from './types.js';
 
 export const CATEGORIES: readonly IncidentCategory[] = [
-  { slug: 'roubo-celular', label: 'Roubo de celular', group: 'patrimonio', icon: 'smartphone', color: '#D2702F', riskWeight: 0.6, description: 'Subtração de celular com violência ou grave ameaça.' },
-  { slug: 'furto-celular', label: 'Furto de celular', group: 'patrimonio', icon: 'smartphone', color: '#E0A93B', riskWeight: 0.4, description: 'Subtração de celular sem violência (ex.: descuido).' },
-  { slug: 'assalto-mao-armada', label: 'Assalto à mão armada', group: 'patrimonio', icon: 'shield-alert', color: '#A8332F', riskWeight: 0.85, description: 'Roubo mediante uso de arma.' },
-  { slug: 'tentativa-assalto', label: 'Tentativa de assalto', group: 'patrimonio', icon: 'shield', color: '#D2702F', riskWeight: 0.6, description: 'Tentativa de roubo não consumada.' },
-  { slug: 'arrastao', label: 'Arrastão', group: 'patrimonio', icon: 'users', color: '#A8332F', riskWeight: 0.8, description: 'Ação coletiva de roubo a múltiplas vítimas.' },
-  { slug: 'roubo-veiculo', label: 'Roubo de veículo', group: 'patrimonio', icon: 'car', color: '#A8332F', riskWeight: 0.8, description: 'Subtração de veículo com violência ou ameaça.' },
-  { slug: 'furto-veiculo', label: 'Furto de veículo', group: 'patrimonio', icon: 'car', color: '#E0A93B', riskWeight: 0.55, description: 'Subtração de veículo sem violência.' },
-  { slug: 'roubo-carga', label: 'Roubo de carga', group: 'patrimonio', icon: 'truck', color: '#A8332F', riskWeight: 0.8, description: 'Subtração de carga transportada.' },
-  { slug: 'golpe', label: 'Golpe', group: 'patrimonio', icon: 'alert-triangle', color: '#E0A93B', riskWeight: 0.4, description: 'Fraude ou estelionato (presencial ou digital).' },
-  { slug: 'disparo-arma', label: 'Disparo de arma de fogo', group: 'violencia_armada', icon: 'crosshair', color: '#A8332F', riskWeight: 0.9, description: 'Disparo de arma de fogo registrado.' },
-  { slug: 'tiroteio', label: 'Tiroteio', group: 'violencia_armada', icon: 'crosshair', color: '#A8332F', riskWeight: 0.95, description: 'Troca de tiros em via ou área pública.' },
-  { slug: 'confronto-policial', label: 'Confronto policial', group: 'violencia_armada', icon: 'siren', color: '#A8332F', riskWeight: 0.9, description: 'Operação ou confronto envolvendo forças de segurança.' },
-  { slug: 'sequestro-relampago', label: 'Sequestro relâmpago', group: 'pessoa', icon: 'user-x', color: '#A8332F', riskWeight: 0.9, description: 'Privação de liberdade de curta duração para extorsão.' },
-  { slug: 'violencia-contra-mulher', label: 'Violência contra mulher', group: 'pessoa', icon: 'heart-crack', color: '#A8332F', riskWeight: 0.85, description: 'Agressão física, psicológica ou sexual contra mulher.' },
-  { slug: 'assedio', label: 'Assédio', group: 'pessoa', icon: 'user-minus', color: '#D2702F', riskWeight: 0.5, description: 'Assédio moral ou sexual em espaço público.' },
-  { slug: 'vandalismo', label: 'Vandalismo', group: 'mobilidade', icon: 'spray-can', color: '#E0A93B', riskWeight: 0.35, description: 'Dano a patrimônio público ou privado.' },
-  { slug: 'area-alagada', label: 'Área alagada', group: 'mobilidade', icon: 'waves', color: '#E0A93B', riskWeight: 0.45, description: 'Alagamento que afeta circulação ou imóveis.' },
-  { slug: 'via-interditada', label: 'Via interditada', group: 'mobilidade', icon: 'construction', color: '#E0A93B', riskWeight: 0.3, description: 'Bloqueio ou interdição de via.' },
-  { slug: 'outro', label: 'Outro', group: 'outros', icon: 'help-circle', color: '#5A6470', riskWeight: 0.2, description: 'Ocorrência não classificada nas demais categorias.' },
+  {
+    slug: 'roubo-celular',
+    label: 'Roubo de celular',
+    group: 'patrimonio',
+    icon: 'smartphone',
+    color: '#D2702F',
+    riskWeight: 0.6,
+    description: 'Subtração de celular com violência ou grave ameaça.',
+  },
+  {
+    slug: 'furto-celular',
+    label: 'Furto de celular',
+    group: 'patrimonio',
+    icon: 'smartphone',
+    color: '#E0A93B',
+    riskWeight: 0.4,
+    description: 'Subtração de celular sem violência (ex.: descuido).',
+  },
+  {
+    slug: 'assalto-mao-armada',
+    label: 'Assalto à mão armada',
+    group: 'patrimonio',
+    icon: 'shield-alert',
+    color: '#A8332F',
+    riskWeight: 0.85,
+    description: 'Roubo mediante uso de arma.',
+  },
+  {
+    slug: 'tentativa-assalto',
+    label: 'Tentativa de assalto',
+    group: 'patrimonio',
+    icon: 'shield',
+    color: '#D2702F',
+    riskWeight: 0.6,
+    description: 'Tentativa de roubo não consumada.',
+  },
+  {
+    slug: 'arrastao',
+    label: 'Arrastão',
+    group: 'patrimonio',
+    icon: 'users',
+    color: '#A8332F',
+    riskWeight: 0.8,
+    description: 'Ação coletiva de roubo a múltiplas vítimas.',
+  },
+  {
+    slug: 'roubo-veiculo',
+    label: 'Roubo de veículo',
+    group: 'patrimonio',
+    icon: 'car',
+    color: '#A8332F',
+    riskWeight: 0.8,
+    description: 'Subtração de veículo com violência ou ameaça.',
+  },
+  {
+    slug: 'furto-veiculo',
+    label: 'Furto de veículo',
+    group: 'patrimonio',
+    icon: 'car',
+    color: '#E0A93B',
+    riskWeight: 0.55,
+    description: 'Subtração de veículo sem violência.',
+  },
+  {
+    slug: 'roubo-carga',
+    label: 'Roubo de carga',
+    group: 'patrimonio',
+    icon: 'truck',
+    color: '#A8332F',
+    riskWeight: 0.8,
+    description: 'Subtração de carga transportada.',
+  },
+  {
+    slug: 'golpe',
+    label: 'Golpe',
+    group: 'patrimonio',
+    icon: 'alert-triangle',
+    color: '#E0A93B',
+    riskWeight: 0.4,
+    description: 'Fraude ou estelionato (presencial ou digital).',
+  },
+  {
+    slug: 'disparo-arma',
+    label: 'Disparo de arma de fogo',
+    group: 'violencia_armada',
+    icon: 'crosshair',
+    color: '#A8332F',
+    riskWeight: 0.9,
+    description: 'Disparo de arma de fogo registrado.',
+  },
+  {
+    slug: 'tiroteio',
+    label: 'Tiroteio',
+    group: 'violencia_armada',
+    icon: 'crosshair',
+    color: '#A8332F',
+    riskWeight: 0.95,
+    description: 'Troca de tiros em via ou área pública.',
+  },
+  {
+    slug: 'confronto-policial',
+    label: 'Confronto policial',
+    group: 'violencia_armada',
+    icon: 'siren',
+    color: '#A8332F',
+    riskWeight: 0.9,
+    description: 'Operação ou confronto envolvendo forças de segurança.',
+  },
+  {
+    slug: 'sequestro-relampago',
+    label: 'Sequestro relâmpago',
+    group: 'pessoa',
+    icon: 'user-x',
+    color: '#A8332F',
+    riskWeight: 0.9,
+    description: 'Privação de liberdade de curta duração para extorsão.',
+  },
+  {
+    slug: 'violencia-contra-mulher',
+    label: 'Violência contra mulher',
+    group: 'pessoa',
+    icon: 'heart-crack',
+    color: '#A8332F',
+    riskWeight: 0.85,
+    description: 'Agressão física, psicológica ou sexual contra mulher.',
+  },
+  {
+    slug: 'assedio',
+    label: 'Assédio',
+    group: 'pessoa',
+    icon: 'user-minus',
+    color: '#D2702F',
+    riskWeight: 0.5,
+    description: 'Assédio moral ou sexual em espaço público.',
+  },
+  {
+    slug: 'vandalismo',
+    label: 'Vandalismo',
+    group: 'mobilidade',
+    icon: 'spray-can',
+    color: '#E0A93B',
+    riskWeight: 0.35,
+    description: 'Dano a patrimônio público ou privado.',
+  },
+  {
+    slug: 'area-alagada',
+    label: 'Área alagada',
+    group: 'mobilidade',
+    icon: 'waves',
+    color: '#E0A93B',
+    riskWeight: 0.45,
+    description: 'Alagamento que afeta circulação ou imóveis.',
+  },
+  {
+    slug: 'via-interditada',
+    label: 'Via interditada',
+    group: 'mobilidade',
+    icon: 'construction',
+    color: '#E0A93B',
+    riskWeight: 0.3,
+    description: 'Bloqueio ou interdição de via.',
+  },
+  {
+    slug: 'outro',
+    label: 'Outro',
+    group: 'outros',
+    icon: 'help-circle',
+    color: '#5A6470',
+    riskWeight: 0.2,
+    description: 'Ocorrência não classificada nas demais categorias.',
+  },
 ];
 
 export const CATEGORY_BY_SLUG: Record<CategorySlug, IncidentCategory> = Object.fromEntries(
@@ -535,10 +726,12 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ## Task 5: Trust score (`core`, TDD)
 
 **Files:**
+
 - Test: `packages/core/src/trust-score.test.ts`
 - Create: `packages/core/src/trust-score.ts`
 
 **Interfaces:**
+
 - Consumes: `TrustInput`, `SourceKind` (Task 3).
 - Produces: `REP_MAX = 100`, `SOURCE_FACTOR: Record<SourceKind, number>`, `computeTrustScore(input: TrustInput): number` (0..100), `nextReputation(current: number, outcome: 'CONFIRMED' | 'REJECTED'): number`.
 
@@ -550,8 +743,13 @@ import { computeTrustScore, nextReputation, REP_MAX } from './trust-score.js';
 import type { TrustInput } from './types.js';
 
 const base: TrustInput = {
-  sourceKind: 'COMMUNITY', confirms: 0, disputes: 0,
-  authorReputation: 0, hasPhoto: false, hasVideo: false, recurrenceCount: 0,
+  sourceKind: 'COMMUNITY',
+  confirms: 0,
+  disputes: 0,
+  authorReputation: 0,
+  hasPhoto: false,
+  hasVideo: false,
+  recurrenceCount: 0,
 };
 
 describe('computeTrustScore', () => {
@@ -586,8 +784,13 @@ describe('computeTrustScore', () => {
   });
   it('a fully-corroborated official report approaches 100', () => {
     const s = computeTrustScore({
-      sourceKind: 'OFFICIAL', confirms: 20, disputes: 0,
-      authorReputation: REP_MAX, hasPhoto: true, hasVideo: true, recurrenceCount: 10,
+      sourceKind: 'OFFICIAL',
+      confirms: 20,
+      disputes: 0,
+      authorReputation: REP_MAX,
+      hasPhoto: true,
+      hasVideo: true,
+      recurrenceCount: 10,
     });
     expect(s).toBeGreaterThan(90);
   });
@@ -675,10 +878,12 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ## Task 6: Risk score (`core`, TDD)
 
 **Files:**
+
 - Test: `packages/core/src/risk-score.test.ts`
 - Create: `packages/core/src/risk-score.ts`
 
 **Interfaces:**
+
 - Consumes: `RiskInput`, `RiskBand` (Task 3).
 - Produces: `RISK_DECAY_LAMBDA = 0.05`, `riskContribution(input: RiskInput): number`, `aggregateRisk(items: RiskInput[], areaFactor: number): number`, `normalizeRisk(raw: number, cityMax: number): number` (0..100), `riskBand(score: number): RiskBand`, `RISK_BAND_COLOR: Record<RiskBand, string>`.
 
@@ -687,7 +892,11 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```ts
 import { describe, it, expect } from 'vitest';
 import {
-  riskContribution, aggregateRisk, normalizeRisk, riskBand, RISK_BAND_COLOR,
+  riskContribution,
+  aggregateRisk,
+  normalizeRisk,
+  riskBand,
+  RISK_BAND_COLOR,
 } from './risk-score.js';
 import type { RiskInput } from './types.js';
 
@@ -803,9 +1012,11 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ## Task 7: `packages/db` — Drizzle schema + PostGIS + client
 
 **Files:**
+
 - Create: `packages/db/package.json`, `packages/db/tsconfig.json`, `packages/db/drizzle.config.ts`, `packages/db/src/client.ts`, `packages/db/src/schema.ts`, `packages/db/src/index.ts`, `packages/db/migrations/0000_init.sql`
 
 **Interfaces:**
+
 - Consumes: `DATABASE_URL` (env).
 - Produces: `db` (Drizzle client), e tabelas `users`, `accounts`, `sessions`, `verificationTokens`, `sources`, `incidentCategories`, `incidents`, `verifications`, `votes`, `comments`, `evidenceAssets`, `regions`, `neighborhoods`, `riskScores`, `alertSubscriptions`, `notifications`.
 
@@ -841,11 +1052,13 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 - [ ] **Step 2: Create `tsconfig.json` and `drizzle.config.ts`**
 
 `tsconfig.json`:
+
 ```json
 { "extends": "../../tsconfig.base.json", "include": ["src"] }
 ```
 
 `drizzle.config.ts`:
+
 ```ts
 import { defineConfig } from 'drizzle-kit';
 export default defineConfig({
@@ -860,8 +1073,16 @@ export default defineConfig({
 
 ```ts
 import {
-  pgTable, uuid, text, integer, doublePrecision, boolean, timestamp,
-  pgEnum, customType, index,
+  pgTable,
+  uuid,
+  text,
+  integer,
+  doublePrecision,
+  boolean,
+  timestamp,
+  pgEnum,
+  customType,
+  index,
 } from 'drizzle-orm/pg-core';
 
 // PostGIS geography(Point,4326) e geometry(MultiPolygon,4326) via customType
@@ -873,12 +1094,23 @@ const geometryMultiPolygon = customType<{ data: string }>({
 });
 
 export const sourceKind = pgEnum('source_kind', ['OFFICIAL', 'COMMUNITY', 'NEWS', 'PARTNER']);
-export const incidentStatus = pgEnum('incident_status', ['PENDING', 'CONFIRMED', 'REJECTED', 'RESOLVED']);
+export const incidentStatus = pgEnum('incident_status', [
+  'PENDING',
+  'CONFIRMED',
+  'REJECTED',
+  'RESOLVED',
+]);
 export const userRole = pgEnum('user_role', ['USER', 'MODERATOR', 'ADMIN']);
 export const verificationKind = pgEnum('verification_kind', ['CONFIRM', 'DISPUTE']);
 export const evidenceKind = pgEnum('evidence_kind', ['IMAGE', 'VIDEO']);
 export const riskScope = pgEnum('risk_scope', ['STREET', 'NEIGHBORHOOD', 'REGION']);
-export const notificationKind = pgEnum('notification_kind', ['CRITICAL', 'ATTENTION', 'VERIFIED', 'CONFIRMATION', 'DIGEST']);
+export const notificationKind = pgEnum('notification_kind', [
+  'CRITICAL',
+  'ATTENTION',
+  'VERIFIED',
+  'CONFIRMATION',
+  'DIGEST',
+]);
 
 export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -892,7 +1124,9 @@ export const users = pgTable('users', {
 });
 
 export const accounts = pgTable('accounts', {
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
   type: text('type').notNull(),
   provider: text('provider').notNull(),
   providerAccountId: text('provider_account_id').notNull(),
@@ -907,7 +1141,9 @@ export const accounts = pgTable('accounts', {
 
 export const sessions = pgTable('sessions', {
   sessionToken: text('session_token').primaryKey(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
   expires: timestamp('expires', { withTimezone: true }).notNull(),
 });
 
@@ -935,39 +1171,59 @@ export const incidentCategories = pgTable('incident_categories', {
   description: text('description').notNull(),
 });
 
-export const regions = pgTable('regions', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  name: text('name').notNull(),
-  geom: geometryMultiPolygon('geom'),
-}, (t) => ({ geomIdx: index('regions_geom_idx').using('gist', t.geom) }));
+export const regions = pgTable(
+  'regions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    name: text('name').notNull(),
+    geom: geometryMultiPolygon('geom'),
+  },
+  (t) => ({ geomIdx: index('regions_geom_idx').using('gist', t.geom) }),
+);
 
-export const neighborhoods = pgTable('neighborhoods', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  regionId: uuid('region_id').references(() => regions.id),
-  name: text('name').notNull(),
-  geom: geometryMultiPolygon('geom'),
-}, (t) => ({ geomIdx: index('neighborhoods_geom_idx').using('gist', t.geom) }));
+export const neighborhoods = pgTable(
+  'neighborhoods',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    regionId: uuid('region_id').references(() => regions.id),
+    name: text('name').notNull(),
+    geom: geometryMultiPolygon('geom'),
+  },
+  (t) => ({ geomIdx: index('neighborhoods_geom_idx').using('gist', t.geom) }),
+);
 
-export const incidents = pgTable('incidents', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  refCode: text('ref_code').notNull().unique(),
-  categorySlug: text('category_slug').notNull().references(() => incidentCategories.slug),
-  sourceId: uuid('source_id').notNull().references(() => sources.id),
-  authorId: uuid('author_id').references(() => users.id),
-  title: text('title').notNull(),
-  description: text('description'),
-  location: geographyPoint('location').notNull(),
-  neighborhoodId: uuid('neighborhood_id').references(() => neighborhoods.id),
-  occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull(),
-  status: incidentStatus('status').notNull().default('PENDING'),
-  trustScore: integer('trust_score').notNull().default(0),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-}, (t) => ({ locIdx: index('incidents_location_idx').using('gist', t.location) }));
+export const incidents = pgTable(
+  'incidents',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    refCode: text('ref_code').notNull().unique(),
+    categorySlug: text('category_slug')
+      .notNull()
+      .references(() => incidentCategories.slug),
+    sourceId: uuid('source_id')
+      .notNull()
+      .references(() => sources.id),
+    authorId: uuid('author_id').references(() => users.id),
+    title: text('title').notNull(),
+    description: text('description'),
+    location: geographyPoint('location').notNull(),
+    neighborhoodId: uuid('neighborhood_id').references(() => neighborhoods.id),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull(),
+    status: incidentStatus('status').notNull().default('PENDING'),
+    trustScore: integer('trust_score').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({ locIdx: index('incidents_location_idx').using('gist', t.location) }),
+);
 
 export const verifications = pgTable('verifications', {
   id: uuid('id').defaultRandom().primaryKey(),
-  incidentId: uuid('incident_id').notNull().references(() => incidents.id, { onDelete: 'cascade' }),
-  userId: uuid('user_id').notNull().references(() => users.id),
+  incidentId: uuid('incident_id')
+    .notNull()
+    .references(() => incidents.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id),
   kind: verificationKind('kind').notNull(),
   note: text('note'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -975,23 +1231,33 @@ export const verifications = pgTable('verifications', {
 
 export const votes = pgTable('votes', {
   id: uuid('id').defaultRandom().primaryKey(),
-  incidentId: uuid('incident_id').notNull().references(() => incidents.id, { onDelete: 'cascade' }),
-  userId: uuid('user_id').notNull().references(() => users.id),
+  incidentId: uuid('incident_id')
+    .notNull()
+    .references(() => incidents.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id),
   value: integer('value').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const comments = pgTable('comments', {
   id: uuid('id').defaultRandom().primaryKey(),
-  incidentId: uuid('incident_id').notNull().references(() => incidents.id, { onDelete: 'cascade' }),
-  userId: uuid('user_id').notNull().references(() => users.id),
+  incidentId: uuid('incident_id')
+    .notNull()
+    .references(() => incidents.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id),
   body: text('body').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const evidenceAssets = pgTable('evidence_assets', {
   id: uuid('id').defaultRandom().primaryKey(),
-  incidentId: uuid('incident_id').notNull().references(() => incidents.id, { onDelete: 'cascade' }),
+  incidentId: uuid('incident_id')
+    .notNull()
+    .references(() => incidents.id, { onDelete: 'cascade' }),
   url: text('url').notNull(),
   kind: evidenceKind('kind').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -1007,20 +1273,28 @@ export const riskScores = pgTable('risk_scores', {
   computedAt: timestamp('computed_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const alertSubscriptions = pgTable('alert_subscriptions', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  center: geographyPoint('center').notNull(),
-  radiusKm: doublePrecision('radius_km').notNull().default(2),
-  categories: text('categories').array(),
-  minSeverity: text('min_severity').notNull().default('ATTENTION'),
-  channels: text('channels').array().notNull().default(['IN_APP']),
-  active: boolean('active').notNull().default(true),
-}, (t) => ({ centerIdx: index('alert_center_idx').using('gist', t.center) }));
+export const alertSubscriptions = pgTable(
+  'alert_subscriptions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    center: geographyPoint('center').notNull(),
+    radiusKm: doublePrecision('radius_km').notNull().default(2),
+    categories: text('categories').array(),
+    minSeverity: text('min_severity').notNull().default('ATTENTION'),
+    channels: text('channels').array().notNull().default(['IN_APP']),
+    active: boolean('active').notNull().default(true),
+  },
+  (t) => ({ centerIdx: index('alert_center_idx').using('gist', t.center) }),
+);
 
 export const notifications = pgTable('notifications', {
   id: uuid('id').defaultRandom().primaryKey(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
   kind: notificationKind('kind').notNull(),
   incidentId: uuid('incident_id').references(() => incidents.id, { onDelete: 'set null' }),
   title: text('title').notNull(),
@@ -1033,6 +1307,7 @@ export const notifications = pgTable('notifications', {
 - [ ] **Step 4: Create `packages/db/src/client.ts` and `index.ts`**
 
 `client.ts`:
+
 ```ts
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
@@ -1047,6 +1322,7 @@ export type Database = typeof db;
 ```
 
 `index.ts`:
+
 ```ts
 export * from './schema.js';
 export { db } from './client.js';
@@ -1069,6 +1345,7 @@ Expected: arquivos SQL gerados em `packages/db/migrations/`.
 
 Run: `pnpm --filter @radar-urbano/db typecheck`
 Expected: PASS.
+
 ```bash
 git add packages/db
 git commit -m "feat(db): add Drizzle schema with PostGIS entities
@@ -1081,9 +1358,11 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ## Task 8: `packages/db` — migrate runner + seed
 
 **Files:**
+
 - Create: `packages/db/src/migrate.ts`, `packages/db/src/seed.ts`
 
 **Interfaces:**
+
 - Consumes: `db`, schema (Task 7), `CATEGORIES` (Task 4).
 - Produces: comandos `pnpm db:migrate` e `pnpm db:seed` funcionais.
 
@@ -1115,10 +1394,17 @@ import { incidentCategories, sources } from './schema.js';
 
 await db
   .insert(incidentCategories)
-  .values(CATEGORIES.map((c) => ({
-    slug: c.slug, label: c.label, group: c.group, icon: c.icon,
-    color: c.color, riskWeight: c.riskWeight, description: c.description,
-  })))
+  .values(
+    CATEGORIES.map((c) => ({
+      slug: c.slug,
+      label: c.label,
+      group: c.group,
+      icon: c.icon,
+      color: c.color,
+      riskWeight: c.riskWeight,
+      description: c.description,
+    })),
+  )
   .onConflictDoNothing();
 
 await db
@@ -1148,9 +1434,11 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ## Task 9: Ambiente Docker (compose + .env.example + Dockerfiles)
 
 **Files:**
+
 - Create: `docker-compose.yml`, `.env.example`, `Dockerfile`, `Dockerfile.worker`, `.dockerignore`
 
 **Interfaces:**
+
 - Produces: serviços `postgres` (PostGIS), `redis`, `web`, `worker`, `adminer`; subida com `docker compose up`.
 
 - [ ] **Step 1: Create `.env.example`**
@@ -1226,6 +1514,7 @@ volumes:
 - [ ] **Step 3: Create `Dockerfile` (web) and `Dockerfile.worker`**
 
 `Dockerfile`:
+
 ```dockerfile
 FROM node:20-slim AS base
 RUN corepack enable
@@ -1238,6 +1527,7 @@ CMD ["pnpm", "--filter", "@radar-urbano/web", "start"]
 ```
 
 `Dockerfile.worker`:
+
 ```dockerfile
 FROM node:20-slim AS base
 RUN corepack enable
@@ -1248,6 +1538,7 @@ CMD ["pnpm", "--filter", "@radar-urbano/worker", "start"]
 ```
 
 `.dockerignore`:
+
 ```
 node_modules
 **/node_modules
@@ -1270,9 +1561,11 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ## Task 10: `apps/web` — Next.js scaffold + Auth.js + tokens
 
 **Files:**
+
 - Create: `apps/web/package.json`, `apps/web/tsconfig.json`, `apps/web/next.config.ts`, `apps/web/tailwind.config.ts`, `apps/web/postcss.config.mjs`, `apps/web/src/app/globals.css`, `apps/web/src/app/layout.tsx`, `apps/web/src/app/page.tsx`, `apps/web/src/auth.ts`, `apps/web/src/app/api/auth/[...nextauth]/route.ts`
 
 **Interfaces:**
+
 - Consumes: `@radar-urbano/db`, `@radar-urbano/core`, `@radar-urbano/config`.
 - Produces: app Next.js rodando em `:3000`, com Auth.js configurado (Drizzle adapter), fontes IBM Plex e tokens aplicados.
 
@@ -1317,6 +1610,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 - [ ] **Step 2: Create config files**
 
 `tsconfig.json`:
+
 ```json
 {
   "extends": "../../tsconfig.base.json",
@@ -1332,6 +1626,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 `next.config.ts`:
+
 ```ts
 import type { NextConfig } from 'next';
 const config: NextConfig = { transpilePackages: ['@radar-urbano/core', '@radar-urbano/db'] };
@@ -1339,11 +1634,13 @@ export default config;
 ```
 
 `postcss.config.mjs`:
+
 ```js
 export default { plugins: { tailwindcss: {}, autoprefixer: {} } };
 ```
 
 `tailwind.config.ts`:
+
 ```ts
 import type { Config } from 'tailwindcss';
 import { radarUrbanoPreset } from '@radar-urbano/config/tailwind-preset';
@@ -1362,12 +1659,16 @@ export default config;
 @tailwind utilities;
 @import '@radar-urbano/config/tokens.css';
 
-body { background: var(--ru-papel); color: var(--ru-tinta); }
+body {
+  background: var(--ru-papel);
+  color: var(--ru-tinta);
+}
 ```
 
 - [ ] **Step 4: Create `src/auth.ts` and route handler**
 
 `src/auth.ts`:
+
 ```ts
 import NextAuth from 'next-auth';
 import GitHub from 'next-auth/providers/github';
@@ -1388,6 +1689,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 ```
 
 `src/app/api/auth/[...nextauth]/route.ts`:
+
 ```ts
 import { handlers } from '@/auth';
 export const { GET, POST } = handlers;
@@ -1396,6 +1698,7 @@ export const { GET, POST } = handlers;
 - [ ] **Step 5: Create `layout.tsx` and `page.tsx`**
 
 `src/app/layout.tsx`:
+
 ```tsx
 import './globals.css';
 import type { ReactNode } from 'react';
@@ -1418,6 +1721,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 ```
 
 `src/app/page.tsx`:
+
 ```tsx
 export default function Home() {
   return (
@@ -1452,15 +1756,18 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ## Task 11: `apps/web` — API de incidentes + criação de relato
 
 **Files:**
+
 - Create: `apps/web/src/lib/incidents.ts`, `apps/web/src/lib/ref-code.ts`, `apps/web/src/lib/ref-code.test.ts`, `apps/web/src/app/api/incidents/route.ts`
 
 **Interfaces:**
+
 - Consumes: `db`, schema, `getCategory`, `computeTrustScore`.
 - Produces: `GET /api/incidents` (lista GeoJSON com bbox opcional), `POST /api/incidents` (cria relato comunidade), `generateRefCode(): string` (`RU-XXXX`).
 
 - [ ] **Step 1: Write the failing test for ref-code**
 
 `apps/web/src/lib/ref-code.test.ts`:
+
 ```ts
 import { describe, it, expect } from 'vitest';
 import { generateRefCode } from './ref-code.js';
@@ -1532,8 +1839,11 @@ export async function listIncidentsGeoJSON() {
       type: 'Feature' as const,
       geometry: { type: 'Point' as const, coordinates: [Number(r.lng), Number(r.lat)] },
       properties: {
-        id: r.id, refCode: r.ref_code, category: r.category_slug,
-        status: r.status, trustScore: r.trust_score,
+        id: r.id,
+        refCode: r.ref_code,
+        category: r.category_slug,
+        status: r.status,
+        trustScore: r.trust_score,
       },
     })),
   };
@@ -1542,21 +1852,29 @@ export async function listIncidentsGeoJSON() {
 export async function createIncident(input: CreateIncidentInput) {
   getCategory(input.categorySlug); // valida slug (lança se inválido)
   const trustScore = computeTrustScore({
-    sourceKind: 'COMMUNITY', confirms: 0, disputes: 0,
-    authorReputation: 0, hasPhoto: false, hasVideo: false, recurrenceCount: 0,
+    sourceKind: 'COMMUNITY',
+    confirms: 0,
+    disputes: 0,
+    authorReputation: 0,
+    hasPhoto: false,
+    hasVideo: false,
+    recurrenceCount: 0,
   });
   const refCode = generateRefCode();
-  const [row] = await db.insert(incidents).values({
-    refCode,
-    categorySlug: input.categorySlug,
-    sourceId: input.sourceId,
-    authorId: input.authorId,
-    title: input.title,
-    description: input.description,
-    location: sql`ST_SetSRID(ST_MakePoint(${input.lng}, ${input.lat}), 4326)::geography`,
-    occurredAt: input.occurredAt,
-    trustScore,
-  }).returning();
+  const [row] = await db
+    .insert(incidents)
+    .values({
+      refCode,
+      categorySlug: input.categorySlug,
+      sourceId: input.sourceId,
+      authorId: input.authorId,
+      title: input.title,
+      description: input.description,
+      location: sql`ST_SetSRID(ST_MakePoint(${input.lng}, ${input.lat}), 4326)::geography`,
+      occurredAt: input.occurredAt,
+      trustScore,
+    })
+    .returning();
   return row;
 }
 ```
@@ -1605,9 +1923,11 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ## Task 12: `apps/web` — Mapa MapLibre + heatmap + marcadores
 
 **Files:**
+
 - Create: `apps/web/src/components/Map.tsx`, `apps/web/src/app/mapa/page.tsx`
 
 **Interfaces:**
+
 - Consumes: `GET /api/incidents`, `NEXT_PUBLIC_MAP_STYLE_URL`.
 - Produces: tela `/mapa` com MapLibre, camada de heatmap e camada de pontos por categoria (cor do design).
 
@@ -1641,9 +1961,21 @@ export function Map() {
         paint: {
           'heatmap-weight': ['interpolate', ['linear'], ['get', 'trustScore'], 0, 0, 100, 1],
           'heatmap-color': [
-            'interpolate', ['linear'], ['heatmap-density'],
-            0, 'rgba(63,182,168,0)', 0.2, '#3fb6a8', 0.4, '#a9cf7e',
-            0.6, '#e0a93b', 0.8, '#d2702f', 1, '#a8332f',
+            'interpolate',
+            ['linear'],
+            ['heatmap-density'],
+            0,
+            'rgba(63,182,168,0)',
+            0.2,
+            '#3fb6a8',
+            0.4,
+            '#a9cf7e',
+            0.6,
+            '#e0a93b',
+            0.8,
+            '#d2702f',
+            1,
+            '#a8332f',
           ],
           'heatmap-radius': 30,
         },
@@ -1653,7 +1985,12 @@ export function Map() {
         type: 'circle',
         source: 'incidents',
         minzoom: 13,
-        paint: { 'circle-radius': 6, 'circle-color': '#0e5c63', 'circle-stroke-width': 2, 'circle-stroke-color': '#fbfaf6' },
+        paint: {
+          'circle-radius': 6,
+          'circle-color': '#0e5c63',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#fbfaf6',
+        },
       });
     });
     return () => map.remove();
@@ -1691,16 +2028,19 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ## Task 13: `packages/data-ingestion` — SourceAdapter + adapters stub (TDD)
 
 **Files:**
+
 - Create: `packages/data-ingestion/package.json`, `packages/data-ingestion/tsconfig.json`, `packages/data-ingestion/vitest.config.ts`, `packages/data-ingestion/src/types.ts`, `packages/data-ingestion/src/registry.ts`, `packages/data-ingestion/src/adapters/{isp-rj,csv,geojson,public-api}.ts`, `packages/data-ingestion/src/index.ts`
 - Test: `packages/data-ingestion/src/registry.test.ts`, `packages/data-ingestion/src/adapters/geojson.test.ts`
 
 **Interfaces:**
+
 - Consumes: `NormalizedIncident` deriva de `@radar-urbano/core` types.
 - Produces: `interface SourceAdapter`, `registerAdapter`, `getAdapter`, `listAdapters`, e 4 adapters stub.
 
 - [ ] **Step 1: Create package files (`package.json`, `tsconfig.json`, `vitest.config.ts`)**
 
 `package.json`:
+
 ```json
 {
   "name": "@radar-urbano/data-ingestion",
@@ -1714,8 +2054,10 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
   "devDependencies": { "vitest": "^2.1.3", "typescript": "^5.6.3" }
 }
 ```
+
 `tsconfig.json`: `{ "extends": "../../tsconfig.base.json", "include": ["src"] }`
 `vitest.config.ts`:
+
 ```ts
 import { defineConfig } from 'vitest/config';
 export default defineConfig({ test: { globals: true, environment: 'node' } });
@@ -1751,15 +2093,21 @@ export interface SourceAdapter {
 - [ ] **Step 3: Write failing tests**
 
 `src/registry.test.ts`:
+
 ```ts
 import { describe, it, expect, beforeEach } from 'vitest';
 import { registerAdapter, getAdapter, listAdapters, _resetRegistry } from './registry.js';
 import type { SourceAdapter } from './types.js';
 
 const fake: SourceAdapter = {
-  id: 'fake', sourceKind: 'COMMUNITY',
-  async fetch() { return []; },
-  normalize() { throw new Error('noop'); },
+  id: 'fake',
+  sourceKind: 'COMMUNITY',
+  async fetch() {
+    return [];
+  },
+  normalize() {
+    throw new Error('noop');
+  },
 };
 
 describe('adapter registry', () => {
@@ -1779,6 +2127,7 @@ describe('adapter registry', () => {
 ```
 
 `src/adapters/geojson.test.ts`:
+
 ```ts
 import { describe, it, expect } from 'vitest';
 import { geoJsonAdapter } from './geojson.js';
@@ -1788,7 +2137,12 @@ describe('geoJsonAdapter.normalize', () => {
     const result = geoJsonAdapter.normalize({
       type: 'Feature',
       geometry: { type: 'Point', coordinates: [-43.17, -22.9] },
-      properties: { externalId: 'x1', category: 'outro', title: 'Teste', occurredAt: '2026-06-01T12:00:00Z' },
+      properties: {
+        externalId: 'x1',
+        category: 'outro',
+        title: 'Teste',
+        occurredAt: '2026-06-01T12:00:00Z',
+      },
     });
     expect(result.lng).toBe(-43.17);
     expect(result.lat).toBe(-22.9);
@@ -1829,6 +2183,7 @@ export function _resetRegistry(): void {
 - [ ] **Step 6: Implement adapters**
 
 `src/adapters/geojson.ts`:
+
 ```ts
 import type { CategorySlug } from '@radar-urbano/core';
 import type { NormalizedIncident, RawRecord, SourceAdapter } from '../types.js';
@@ -1852,7 +2207,8 @@ export const geoJsonAdapter: SourceAdapter = {
       categorySlug: (p.category as CategorySlug) ?? 'outro',
       title: String(p.title ?? 'Ocorrência'),
       description: p.description ? String(p.description) : undefined,
-      lng, lat,
+      lng,
+      lat,
       occurredAt: new Date(String(p.occurredAt)),
     };
   },
@@ -1860,13 +2216,16 @@ export const geoJsonAdapter: SourceAdapter = {
 ```
 
 `src/adapters/csv.ts`:
+
 ```ts
 import type { NormalizedIncident, RawRecord, SourceAdapter } from '../types.js';
 
 export const csvAdapter: SourceAdapter = {
   id: 'csv',
   sourceKind: 'PARTNER',
-  async fetch() { return []; },
+  async fetch() {
+    return [];
+  },
   normalize(raw: RawRecord): NormalizedIncident {
     return {
       externalId: String(raw.id),
@@ -1881,6 +2240,7 @@ export const csvAdapter: SourceAdapter = {
 ```
 
 `src/adapters/isp-rj.ts`:
+
 ```ts
 import type { NormalizedIncident, RawRecord, SourceAdapter } from '../types.js';
 
@@ -1889,7 +2249,9 @@ import type { NormalizedIncident, RawRecord, SourceAdapter } from '../types.js';
 export const ispRjAdapter: SourceAdapter = {
   id: 'isp-rj',
   sourceKind: 'OFFICIAL',
-  async fetch() { return []; },
+  async fetch() {
+    return [];
+  },
   normalize(raw: RawRecord): NormalizedIncident {
     return {
       externalId: String(raw.fato_id),
@@ -1904,13 +2266,16 @@ export const ispRjAdapter: SourceAdapter = {
 ```
 
 `src/adapters/public-api.ts`:
+
 ```ts
 import type { NormalizedIncident, RawRecord, SourceAdapter } from '../types.js';
 
 export const publicApiAdapter: SourceAdapter = {
   id: 'public-api',
   sourceKind: 'PARTNER',
-  async fetch() { return []; },
+  async fetch() {
+    return [];
+  },
   normalize(raw: RawRecord): NormalizedIncident {
     return {
       externalId: String(raw.id),
@@ -1947,6 +2312,7 @@ registerAdapter(publicApiAdapter);
 
 Run: `pnpm --filter @radar-urbano/data-ingestion test`
 Expected: PASS.
+
 ```bash
 git add packages/data-ingestion
 git commit -m "feat(ingestion): extensible SourceAdapter registry with stub adapters
@@ -1959,9 +2325,11 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ## Task 14: `apps/worker` — BullMQ + jobs de score e ingestão
 
 **Files:**
+
 - Create: `apps/worker/package.json`, `apps/worker/tsconfig.json`, `apps/worker/src/queues.ts`, `apps/worker/src/index.ts`, `apps/worker/src/jobs/recompute-risk.ts`
 
 **Interfaces:**
+
 - Consumes: `REDIS_URL`, `db`, `aggregateRisk`, `normalizeRisk`, `listAdapters`.
 - Produces: worker que processa fila `risk` (recálculo de risk score por bairro) e `ingestion` (executa adapters).
 
@@ -2039,7 +2407,10 @@ export async function recomputeNeighborhoodRisk(windowDays = 30): Promise<number
     byNeighborhood.set(key, list);
   }
 
-  const raw = [...byNeighborhood.entries()].map(([id, items]) => ({ id, value: aggregateRisk(items, 1) }));
+  const raw = [...byNeighborhood.entries()].map(([id, items]) => ({
+    id,
+    value: aggregateRisk(items, 1),
+  }));
   const cityMax = Math.max(1, ...raw.map((r) => r.value));
   const now = new Date();
   const windowStart = new Date(now.getTime() - windowDays * 86400_000);
@@ -2065,15 +2436,25 @@ import { connection, riskQueue } from './queues.js';
 import { recomputeNeighborhoodRisk } from './jobs/recompute-risk.js';
 import { listAdapters } from '@radar-urbano/data-ingestion';
 
-new Worker('risk', async () => {
-  const count = await recomputeNeighborhoodRisk();
-  console.log(`Risk recomputado para ${count} bairros.`);
-}, { connection });
+new Worker(
+  'risk',
+  async () => {
+    const count = await recomputeNeighborhoodRisk();
+    console.log(`Risk recomputado para ${count} bairros.`);
+  },
+  { connection },
+);
 
-new Worker('ingestion', async (job) => {
-  const adapters = listAdapters();
-  console.log(`Ingestão acionada (${job.name}); adapters disponíveis: ${adapters.map((a) => a.id).join(', ')}`);
-}, { connection });
+new Worker(
+  'ingestion',
+  async (job) => {
+    const adapters = listAdapters();
+    console.log(
+      `Ingestão acionada (${job.name}); adapters disponíveis: ${adapters.map((a) => a.id).join(', ')}`,
+    );
+  },
+  { connection },
+);
 
 // Recalcula risco a cada hora.
 await riskQueue.add('hourly', {}, { repeat: { every: 3600_000 } });
@@ -2084,6 +2465,7 @@ console.log('Worker Radar Urbano iniciado.');
 
 Run: `pnpm install && pnpm --filter @radar-urbano/worker typecheck`
 Expected: PASS.
+
 ```bash
 git add apps/worker
 git commit -m "feat(worker): BullMQ workers for risk recompute and ingestion
@@ -2096,9 +2478,11 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ## Task 15: `apps/web` — Painel de risco (dashboard)
 
 **Files:**
+
 - Create: `apps/web/src/app/painel/page.tsx`, `apps/web/src/lib/risk.ts`
 
 **Interfaces:**
+
 - Consumes: `db`, `riskScores`, `neighborhoods`, `riskBand`, `RISK_BAND_COLOR`.
 - Produces: `/painel` (server component) com ranking de bairros por risco e faixa colorida.
 
@@ -2151,7 +2535,10 @@ export default async function PainelPage() {
             <span>{n.name}</span>
             <span className="flex items-center gap-3 font-mono">
               <span className="h-2 w-24 rounded bg-linha">
-                <span className="block h-2 rounded" style={{ width: `${n.score}%`, background: n.color }} />
+                <span
+                  className="block h-2 rounded"
+                  style={{ width: `${n.score}%`, background: n.color }}
+                />
               </span>
               <span style={{ color: n.color }}>{n.score}</span>
               <span className="text-ardosia">{n.band}</span>
@@ -2168,6 +2555,7 @@ export default async function PainelPage() {
 
 Open `http://localhost:3000/painel` (após o worker rodar ao menos uma vez).
 Expected: ranking com barras coloridas por faixa.
+
 ```bash
 git add apps/web
 git commit -m "feat(web): neighborhood risk dashboard panel
@@ -2180,9 +2568,11 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ## Task 16: Governança open source (Fase 9)
 
 **Files:**
+
 - Create: `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `SECURITY.md`, `GOVERNANCE.md`, `LICENSE`
 
 **Interfaces:**
+
 - Produces: documentos de governança na raiz.
 
 - [ ] **Step 1: Create `LICENSE`** (MIT — permissiva, favorece adoção)
@@ -2196,6 +2586,7 @@ Adaptar o **Contributor Covenant v2.1** (texto oficial), com contato `conduta@ra
 - [ ] **Step 3: Create `CONTRIBUTING.md`**
 
 Seções obrigatórias:
+
 - **Fluxo de branches:** `main` protegida; trabalho em `feat/<slug>`, `fix/<slug>`, `docs/<slug>`.
 - **Conventional Commits:** tabela de tipos (`feat|fix|docs|chore|test|ci|refactor|perf`).
 - **Revisão obrigatória:** todo PR exige ≥1 review aprovado + CI verde.
@@ -2210,10 +2601,11 @@ Seções: versões suportadas; como reportar vulnerabilidade (e-mail `seguranca@
 - [ ] **Step 5: Create `GOVERNANCE.md`**
 
 Definir papéis:
+
 - **Maintainers:** decisão final, releases, gestão de acesso.
 - **Core Contributors:** direito de review/merge em áreas específicas.
 - **Community Contributors:** qualquer pessoa via PR.
-Incluir: processo de promoção entre papéis, tomada de decisão (consenso → voto de maintainers), e processo de RFC para mudanças grandes.
+  Incluir: processo de promoção entre papéis, tomada de decisão (consenso → voto de maintainers), e processo de RFC para mudanças grandes.
 
 - [ ] **Step 6: Commit**
 
@@ -2229,9 +2621,11 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ## Task 17: `.github/` — templates + CODEOWNERS (Fase 11)
 
 **Files:**
+
 - Create: `.github/ISSUE_TEMPLATE/BUG_REPORT.md`, `.github/ISSUE_TEMPLATE/FEATURE_REQUEST.md`, `.github/ISSUE_TEMPLATE/QUESTION.md`, `.github/ISSUE_TEMPLATE/config.yml`, `.github/PULL_REQUEST_TEMPLATE.md`, `.github/CODEOWNERS`
 
 **Interfaces:**
+
 - Produces: estrutura GitHub de contribuição.
 
 - [ ] **Step 1: Create `BUG_REPORT.md`** (front-matter + seções)
@@ -2245,11 +2639,17 @@ labels: ['bug', 'triage']
 ---
 
 ## Descrição
+
 ## Passos para reproduzir
+
 1.
+
 ## Comportamento esperado
+
 ## Comportamento atual
+
 ## Ambiente (SO, navegador, versão)
+
 ## Capturas de tela / logs
 ```
 
@@ -2264,8 +2664,11 @@ labels: ['enhancement', 'triage']
 ---
 
 ## Problema relacionado
+
 ## Solução proposta
+
 ## Alternativas consideradas
+
 ## Contexto adicional
 ```
 
@@ -2280,6 +2683,7 @@ labels: ['question']
 ---
 
 ## Sua dúvida
+
 ## O que você já tentou / leu
 ```
 
@@ -2297,9 +2701,13 @@ contact_links:
 
 ```markdown
 ## O que muda
+
 ## Por quê
+
 ## Como testar
+
 ## Checklist
+
 - [ ] Segue Conventional Commits
 - [ ] Testes adicionados/atualizados
 - [ ] Documentação atualizada
@@ -2330,9 +2738,11 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ## Task 18: CI/CD — GitHub Actions (Fase 12)
 
 **Files:**
+
 - Create: `.github/workflows/ci.yml`
 
 **Interfaces:**
+
 - Produces: pipeline lint + typecheck + test + build em PRs e push para `main`.
 
 - [ ] **Step 1: Create `.github/workflows/ci.yml`**
@@ -2391,9 +2801,11 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ## Task 19: Documentação de arquitetura e domínio (Fases 1,3,5,6,7,8,10)
 
 **Files:**
+
 - Create: `docs/architecture/current-state.md`, `docs/architecture/database.md`, `docs/architecture/geospatial.md`, `docs/architecture/data-ingestion.md`, `docs/domain/incident-categories.md`, `docs/domain/trust-score.md`, `docs/domain/risk-score.md`, `docs/setup/local-development.md`, `docs/development/coding-standards.md`, `docs/devops/ci-cd.md`
 
 **Interfaces:**
+
 - Produces: documentação completa referenciada pelo spec §11.
 
 - [ ] **Step 1: `docs/architecture/current-state.md`** — auditoria do StreetSignal
@@ -2465,9 +2877,11 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ## Task 20: README + relatório de transformação (Fase 13)
 
 **Files:**
+
 - Create: `README.md`, `docs/project-transformation-report.md`
 
 **Interfaces:**
+
 - Produces: porta de entrada do projeto + relatório final.
 
 - [ ] **Step 1: Create `README.md`**
@@ -2477,6 +2891,7 @@ Seções: logo/varredura (ASCII ou SVG), visão do projeto, badges de CI, **arqu
 - [ ] **Step 2: Create `docs/project-transformation-report.md`**
 
 Seções exigidas pelo brief:
+
 - **O que foi encontrado** (auditoria StreetSignal).
 - **O que foi alterado / removido / adicionado** (Supabase→PostGIS, Leaflet→MapLibre, +auth, +trust/risk, +ingestão, +governança, +CI).
 - **Próximos passos recomendados.**
@@ -2504,6 +2919,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ## Self-Review (do autor do plano)
 
 **Cobertura das fases do brief:**
+
 - Fase 1 (auditoria) → Task 19.1 · Fase 2 (Docker/.env/setup) → Tasks 9, 19.8 · Fase 3 (banco/PostGIS/ER) → Tasks 7, 8, 19.2
 - Fase 4 (categorias) → Task 4, 19.5 · Fase 5 (geo) → Tasks 12, 19.3 · Fase 6 (trust) → Tasks 5, 19.6
 - Fase 7 (ingestão) → Tasks 13, 19.4 · Fase 8 (heatmap/risk) → Tasks 6, 12, 15, 19.7

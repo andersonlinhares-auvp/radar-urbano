@@ -16,7 +16,8 @@ CREATE TABLE IF NOT EXISTS "accounts" (
 	"token_type" text,
 	"scope" text,
 	"id_token" text,
-	"session_state" text
+	"session_state" text,
+	CONSTRAINT "accounts_provider_provider_account_id_pk" PRIMARY KEY("provider","provider_account_id")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "alert_subscriptions" (

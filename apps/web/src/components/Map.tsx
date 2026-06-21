@@ -1,7 +1,26 @@
 'use client';
 import { useEffect, useRef } from 'react';
-import maplibregl from 'maplibre-gl';
+import maplibregl, { type StyleSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+
+// Basemap real (ruas + rótulos), dessaturado p/ combinar com o design.
+// Carto Positron (light) — tiles OSM gratuitos, sem chave.
+const BASE_STYLE: StyleSpecification = {
+  version: 8,
+  sources: {
+    basemap: {
+      type: 'raster',
+      tiles: [
+        'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+        'https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+        'https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+      ],
+      tileSize: 256,
+      attribution: '© OpenStreetMap © CARTO',
+    },
+  },
+  layers: [{ id: 'basemap', type: 'raster', source: 'basemap' }],
+};
 
 const RIO: [number, number] = [-43.1789, -22.9068];
 
@@ -18,10 +37,10 @@ export function Map() {
     if (!ref.current) return;
     const map = new maplibregl.Map({
       container: ref.current,
-      style: process.env.NEXT_PUBLIC_MAP_STYLE_URL!,
+      style: BASE_STYLE,
       center: RIO,
       zoom: 11,
-      attributionControl: false,
+      attributionControl: { compact: true },
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
 

@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 function EntrarForm() {
   const router = useRouter();
-  const next = useSearchParams().get('next') ?? '/mapa';
+  const rawNext = useSearchParams().get('next') ?? '/mapa';
+  const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/mapa';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [erro, setErro] = useState('');

@@ -39,42 +39,47 @@ export async function GET(req: Request) {
   }
   const [w, s, e, n] = bbox;
 
-  const rows = await db.execute<Row>(sql`
-    SELECT
-      i.id,
-      i.ref_code,
-      i.title,
-      i.status,
-      i.trust_score,
-      to_char(i.occurred_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS occurred_at,
-      c.label  AS category_label,
-      c.color  AS category_color,
-      ST_X(i.location::geometry) AS lng,
-      ST_Y(i.location::geometry) AS lat
-    FROM incidents i
-    JOIN incident_categories c ON c.slug = i.category_slug
-    WHERE i.location && ST_MakeEnvelope(${w}, ${s}, ${e}, ${n}, 4326)::geography
-    ORDER BY i.occurred_at DESC
-    LIMIT 10
-  `);
+  try {
+    const rows = await db.execute<Row>(sql`
+      SELECT
+        i.id,
+        i.ref_code,
+        i.title,
+        i.status,
+        i.trust_score,
+        to_char(i.occurred_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS occurred_at,
+        c.label  AS category_label,
+        c.color  AS category_color,
+        ST_X(i.location::geometry) AS lng,
+        ST_Y(i.location::geometry) AS lat
+      FROM incidents i
+      JOIN incident_categories c ON c.slug = i.category_slug
+      WHERE i.location && ST_MakeEnvelope(${w}, ${s}, ${e}, ${n}, 4326)::geography
+      ORDER BY i.occurred_at DESC
+      LIMIT 10
+    `);
 
-  await logAccess('list', {
-    userId: session.user.id,
-    meta: { bbox },
-  });
+    await logAccess('list', {
+      userId: session.user.id,
+      meta: { bbox },
+    });
 
-  const incidents = rows.map((row) => ({
-    id: row.id,
-    refCode: row.ref_code,
-    title: row.title,
-    categoryLabel: row.category_label,
-    categoryColor: row.category_color,
-    status: row.status,
-    trustScore: Number(row.trust_score),
-    occurredAt: row.occurred_at,
-    lng: Number(row.lng),
-    lat: Number(row.lat),
-  }));
+    const incidents = rows.map((row) => ({
+      id: row.id,
+      refCode: row.ref_code,
+      title: row.title,
+      categoryLabel: row.category_label,
+      categoryColor: row.category_color,
+      status: row.status,
+      trustScore: Number(row.trust_score),
+      occurredAt: row.occurred_at,
+      lng: Number(row.lng),
+      lat: Number(row.lat),
+    }));
 
-  return NextResponse.json({ incidents });
+    return NextResponse.json({ incidents });
+  } catch (err) {
+    console.error('[recent] db error:', err);
+    return NextResponse.json({ error: 'Erro interno.' }, { status: 500 });
+  }
 }

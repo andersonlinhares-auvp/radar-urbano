@@ -21,14 +21,18 @@ export async function POST(req: Request) {
   if (existing) return NextResponse.json({ error: 'E-mail já cadastrado.' }, { status: 409 });
 
   const passwordHash = await hashPassword(password);
-  await db.insert(users).values({ name, email, passwordHash });
-
   const code = generateCode();
-  await db.insert(emailVerifications).values({
-    email,
-    codeHash: await hashCode(code),
-    expiresAt: new Date(Date.now() + CODE_TTL_MS),
+  const codeHash = await hashCode(code);
+
+  await db.transaction(async (tx) => {
+    await tx.insert(users).values({ name, email, passwordHash });
+    await tx.insert(emailVerifications).values({
+      email,
+      codeHash,
+      expiresAt: new Date(Date.now() + CODE_TTL_MS),
+    });
   });
+
   await sendVerificationCode(email, code);
   return NextResponse.json({ ok: true }, { status: 201 });
 }

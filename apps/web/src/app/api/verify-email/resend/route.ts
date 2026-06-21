@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { and, desc, eq, isNull } from 'drizzle-orm';
-import { db, emailVerifications } from '@radar-urbano/db';
+import { db, users, emailVerifications } from '@radar-urbano/db';
 import { generateCode, hashCode, CODE_TTL_MS, RESEND_COOLDOWN_MS } from '@/lib/verification';
 import { sendVerificationCode } from '@/lib/email';
 
@@ -12,6 +12,10 @@ export async function POST(req: Request) {
     .trim()
     .toLowerCase();
   if (!email) return NextResponse.json({ error: 'E-mail obrigatório.' }, { status: 422 });
+
+  // Validate user exists before generating code (anti-enumeration: return ok regardless)
+  const [existingUser] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  if (!existingUser) return NextResponse.json({ ok: true });
 
   const [last] = await db
     .select()

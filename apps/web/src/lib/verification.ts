@@ -1,3 +1,4 @@
+import { randomInt } from 'node:crypto';
 import { hashPassword, verifyPassword } from './password.js';
 
 export const CODE_TTL_MS = 15 * 60_000;
@@ -5,10 +6,8 @@ export const MAX_ATTEMPTS = 5;
 export const RESEND_COOLDOWN_MS = 60_000;
 
 export function generateCode(): string {
-  // 6 dígitos, 000000–999999
-  return Math.floor(Math.random() * 1_000_000)
-    .toString()
-    .padStart(6, '0');
+  // 6 dígitos, 000000–999999 (CSPRNG)
+  return randomInt(0, 1_000_000).toString().padStart(6, '0');
 }
 
 export function isExpired(expiresAt: Date, now: Date = new Date()): boolean {

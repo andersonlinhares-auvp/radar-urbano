@@ -20,9 +20,9 @@ export async function POST(req: Request) {
     .where(and(eq(emailVerifications.email, email), isNull(emailVerifications.consumedAt)))
     .orderBy(desc(emailVerifications.createdAt))
     .limit(1);
-  if (!rec) return NextResponse.json({ error: 'Código inexistente.' }, { status: 400 });
+  if (!rec) return NextResponse.json({ error: 'Código inválido ou expirado.' }, { status: 400 });
   if (isExpired(rec.expiresAt))
-    return NextResponse.json({ error: 'Código expirado.' }, { status: 400 });
+    return NextResponse.json({ error: 'Código inválido ou expirado.' }, { status: 400 });
   if (rec.attempts >= MAX_ATTEMPTS) {
     return NextResponse.json({ error: 'Tentativas excedidas.' }, { status: 429 });
   }

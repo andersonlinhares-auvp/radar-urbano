@@ -1,5 +1,7 @@
 import './globals.css';
 import type { ReactNode } from 'react';
+import { Providers } from '@/components/Providers';
+import { SessionMenu } from '@/components/SessionMenu';
 
 export const metadata = { title: 'Radar Urbano', description: 'Inteligência urbana colaborativa' };
 
@@ -12,7 +14,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           rel="stylesheet"
         />
       </head>
-      <body className="font-sans">{children}</body>
+      <body className="font-sans">
+        <Providers>
+          <header className="flex items-center justify-end p-4">
+            <SessionMenu />
+          </header>
+          {children}
+        </Providers>
+      </body>
     </html>
   );
 }

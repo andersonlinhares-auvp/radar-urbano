@@ -10,6 +10,7 @@ import {
   customType,
   index,
   primaryKey,
+  jsonb,
 } from 'drizzle-orm/pg-core';
 
 // PostGIS geography(Point,4326) e geometry(MultiPolygon,4326) via customType
@@ -63,6 +64,7 @@ export const users = pgTable('users', {
   image: text('image'),
   role: userRole('role').notNull().default('USER'),
   reputation: integer('reputation').notNull().default(50),
+  passwordHash: text('password_hash'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -162,6 +164,7 @@ export const incidents = pgTable(
     occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull(),
     status: incidentStatus('status').notNull().default('PENDING'),
     trustScore: integer('trust_score').notNull().default(0),
+    anonymous: boolean('anonymous').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({ locIdx: index('incidents_location_idx').using('gist', t.location) }),
@@ -253,3 +256,30 @@ export const notifications = pgTable('notifications', {
   readAt: timestamp('read_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const emailVerifications = pgTable(
+  'email_verifications',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    email: text('email').notNull(),
+    codeHash: text('code_hash').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    attempts: integer('attempts').notNull().default(0),
+    consumedAt: timestamp('consumed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({ emailIdx: index('email_verifications_email_idx').on(t.email) }),
+);
+
+export const accessLogs = pgTable(
+  'access_logs',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    action: text('action').notNull(),
+    meta: jsonb('meta'),
+    ip: text('ip'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({ userIdx: index('access_logs_user_idx').on(t.userId, t.createdAt) }),
+);

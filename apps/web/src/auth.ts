@@ -1,8 +1,11 @@
 import NextAuth, { type NextAuthConfig, type NextAuthResult } from 'next-auth';
-import GitHub from 'next-auth/providers/github';
+import Google from 'next-auth/providers/google';
+import Credentials from 'next-auth/providers/credentials';
+import { eq } from 'drizzle-orm';
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import { db } from '@radar-urbano/db';
 import { accounts, sessions, users, verificationTokens } from '@radar-urbano/db/schema';
+import { verifyPassword } from '@/lib/password';
 
 const config: NextAuthConfig = {
   adapter: DrizzleAdapter(db, {
@@ -11,8 +14,34 @@ const config: NextAuthConfig = {
     sessionsTable: sessions,
     verificationTokensTable: verificationTokens,
   }),
-  providers: [GitHub],
-  session: { strategy: 'database' },
+  session: { strategy: 'jwt' },
+  providers: [
+    Google,
+    Credentials({
+      credentials: { email: {}, password: {} },
+      async authorize(creds) {
+        const email = String(creds?.email ?? '').toLowerCase();
+        const password = String(creds?.password ?? '');
+        if (!email || !password) return null;
+        const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+        if (!user?.passwordHash) return null;
+        if (!user.emailVerified) throw new Error('E-mail não verificado');
+        const ok = await verifyPassword(password, user.passwordHash);
+        if (!ok) return null;
+        return { id: user.id, name: user.name, email: user.email, image: user.image };
+      },
+    }),
+  ],
+  callbacks: {
+    jwt({ token, user }) {
+      if (user) token.uid = user.id;
+      return token;
+    },
+    session({ session, token }) {
+      if (token.uid && session.user) session.user.id = String(token.uid);
+      return session;
+    },
+  },
 };
 
 const result: NextAuthResult = NextAuth(config);

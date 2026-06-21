@@ -36,6 +36,7 @@ export async function GET(req: Request) {
            to_char(i.occurred_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS occurred_at,
            c.label AS category_label, c.color AS category_color
     FROM incidents i JOIN incident_categories c ON c.slug = i.category_slug
+    WHERE ST_DWithin(i.location, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography, 1500)
     ORDER BY i.location <-> ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography
     LIMIT 1
   `);

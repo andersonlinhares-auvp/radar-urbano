@@ -5,6 +5,13 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 
 const RIO: [number, number] = [-43.1789, -22.9068];
 
+function escapeHtml(s: string): string {
+  return s.replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!,
+  );
+}
+
 export function Map() {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -44,9 +51,9 @@ export function Map() {
           `<div style="font-family:'IBM Plex Sans',sans-serif;width:240px;">` +
             `<div style="height:4px;background:${incident.categoryColor ?? '#0e5c63'};"></div>` +
             `<div style="padding:12px 14px;">` +
-            `<strong style="font-size:14px;font-weight:600;color:#11181f;">${incident.title}</strong><br/>` +
-            `<span style="font-size:12px;color:#5a6470;">${incident.categoryLabel} · ${incident.status}</span><br/>` +
-            `<span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a857a;">${incident.refCode}</span>` +
+            `<strong style="font-size:14px;font-weight:600;color:#11181f;">${escapeHtml(incident.title)}</strong><br/>` +
+            `<span style="font-size:12px;color:#5a6470;">${escapeHtml(incident.categoryLabel)} · ${escapeHtml(incident.status)}</span><br/>` +
+            `<span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a857a;">${escapeHtml(incident.refCode)}</span>` +
             ` · <span style="font-size:11px;color:#8a857a;">confiança ${incident.trustScore}</span>` +
             `</div></div>`,
         )

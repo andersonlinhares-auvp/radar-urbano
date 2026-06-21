@@ -54,7 +54,7 @@ export function MapShell() {
 
       {/* Map column */}
       <div className="relative flex-1">
-        <Map ref={mapRef} onBboxChange={handleBboxChange} />
+        <Map ref={mapRef} onBboxChange={handleBboxChange} markers={recent} />
 
         {/* Top floating controls */}
         <div className="pointer-events-none absolute left-4 right-4 top-4 flex flex-wrap items-start gap-2.5">

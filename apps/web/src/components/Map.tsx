@@ -30,6 +30,19 @@ function escapeHtml(s: string): string {
   );
 }
 
+function buildPopupHTML(item: RecentIncident): string {
+  return (
+    `<div style="font-family:'IBM Plex Sans',sans-serif;width:240px;">` +
+    `<div style="height:4px;background:${item.categoryColor ?? '#0e5c63'};"></div>` +
+    `<div style="padding:12px 14px;">` +
+    `<strong style="font-size:14px;font-weight:600;color:#11181f;">${escapeHtml(item.title)}</strong><br/>` +
+    `<span style="font-size:12px;color:#5a6470;">${escapeHtml(item.categoryLabel)} · ${escapeHtml(item.status)}</span><br/>` +
+    `<span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a857a;">${escapeHtml(item.refCode)}</span>` +
+    ` · <span style="font-size:11px;color:#8a857a;">confiança ${item.trustScore}</span>` +
+    `</div></div>`
+  );
+}
+
 export type RecentIncident = {
   id: string;
   refCode: string;
@@ -49,38 +62,69 @@ export type MapHandle = {
 
 type MapProps = {
   onBboxChange?: (bbox: [number, number, number, number]) => void;
+  markers?: RecentIncident[];
 };
 
-export const Map = forwardRef<MapHandle, MapProps>(function Map({ onBboxChange }, ref) {
+export const Map = forwardRef<MapHandle, MapProps>(function Map({ onBboxChange, markers }, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
+  const markersRef = useRef<maplibregl.Marker[]>([]);
   const onBboxChangeRef = useRef(onBboxChange);
   useEffect(() => {
     onBboxChangeRef.current = onBboxChange;
   }, [onBboxChange]);
 
+  function openIncidentPopup(item: RecentIncident) {
+    const map = mapRef.current;
+    const popup = popupRef.current;
+    if (!map || !popup) return;
+    map.flyTo({ center: [item.lng, item.lat], zoom: Math.max(15, map.getZoom()) });
+    popup.setLngLat([item.lng, item.lat]).setHTML(buildPopupHTML(item)).addTo(map);
+  }
+
   useImperativeHandle(ref, () => ({
     showIncident(item: RecentIncident) {
-      const map = mapRef.current;
-      const popup = popupRef.current;
-      if (!map || !popup) return;
-      map.flyTo({ center: [item.lng, item.lat], zoom: Math.max(15, map.getZoom()) });
-      popup
-        .setLngLat([item.lng, item.lat])
-        .setHTML(
-          `<div style="font-family:'IBM Plex Sans',sans-serif;width:240px;">` +
-            `<div style="height:4px;background:${item.categoryColor ?? '#0e5c63'};"></div>` +
-            `<div style="padding:12px 14px;">` +
-            `<strong style="font-size:14px;font-weight:600;color:#11181f;">${escapeHtml(item.title)}</strong><br/>` +
-            `<span style="font-size:12px;color:#5a6470;">${escapeHtml(item.categoryLabel)} · ${escapeHtml(item.status)}</span><br/>` +
-            `<span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a857a;">${escapeHtml(item.refCode)}</span>` +
-            ` · <span style="font-size:11px;color:#8a857a;">confiança ${item.trustScore}</span>` +
-            `</div></div>`,
-        )
-        .addTo(map);
+      openIncidentPopup(item);
     },
   }));
+
+  // Sync Waze-style pin markers whenever the markers prop changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    // Remove previous markers
+    markersRef.current.forEach((m) => m.remove());
+    markersRef.current = [];
+
+    for (const item of markers ?? []) {
+      const el = document.createElement('div');
+      el.style.cssText = [
+        'width:26px',
+        'height:26px',
+        'border-radius:50% 50% 50% 0',
+        'transform:rotate(-45deg)',
+        `background:${item.categoryColor ?? '#0e5c63'}`,
+        'border:2px solid #fff',
+        'box-shadow:0 2px 6px rgba(0,0,0,0.35)',
+        'cursor:pointer',
+      ].join(';');
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openIncidentPopup(item);
+      });
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat([item.lng, item.lat])
+        .addTo(map);
+      markersRef.current.push(marker);
+    }
+
+    return () => {
+      markersRef.current.forEach((m) => m.remove());
+      markersRef.current = [];
+    };
+  }, [markers]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -127,22 +171,12 @@ export const Map = forwardRef<MapHandle, MapProps>(function Map({ onBboxChange }
       if (!r.ok) return;
       const { incident } = await r.json();
       if (!incident) return;
-      popup
-        .setLngLat(e.lngLat)
-        .setHTML(
-          `<div style="font-family:'IBM Plex Sans',sans-serif;width:240px;">` +
-            `<div style="height:4px;background:${incident.categoryColor ?? '#0e5c63'};"></div>` +
-            `<div style="padding:12px 14px;">` +
-            `<strong style="font-size:14px;font-weight:600;color:#11181f;">${escapeHtml(incident.title)}</strong><br/>` +
-            `<span style="font-size:12px;color:#5a6470;">${escapeHtml(incident.categoryLabel)} · ${escapeHtml(incident.status)}</span><br/>` +
-            `<span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a857a;">${escapeHtml(incident.refCode)}</span>` +
-            ` · <span style="font-size:11px;color:#8a857a;">confiança ${incident.trustScore}</span>` +
-            `</div></div>`,
-        )
-        .addTo(map);
+      popup.setLngLat(e.lngLat).setHTML(buildPopupHTML(incident)).addTo(map);
     });
 
     return () => {
+      markersRef.current.forEach((m) => m.remove());
+      markersRef.current = [];
       mapRef.current = null;
       popupRef.current = null;
       map.remove();

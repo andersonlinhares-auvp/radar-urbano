@@ -1,22 +1,22 @@
-import NextAuth, { type NextAuthConfig, type NextAuthResult } from 'next-auth';
-import Google from 'next-auth/providers/google';
+import NextAuth, { type NextAuthResult } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { eq } from 'drizzle-orm';
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import { db } from '@radar-urbano/db';
 import { accounts, sessions, users, verificationTokens } from '@radar-urbano/db/schema';
 import { verifyPassword } from '@/lib/password';
+import authConfig from './auth.config';
 
-const config: NextAuthConfig = {
+const result: NextAuthResult = NextAuth({
+  ...authConfig,
   adapter: DrizzleAdapter(db, {
     usersTable: users,
     accountsTable: accounts,
     sessionsTable: sessions,
     verificationTokensTable: verificationTokens,
   }),
-  session: { strategy: 'jwt' },
   providers: [
-    Google,
+    ...authConfig.providers,
     Credentials({
       credentials: { email: {}, password: {} },
       async authorize(creds) {
@@ -32,19 +32,7 @@ const config: NextAuthConfig = {
       },
     }),
   ],
-  callbacks: {
-    jwt({ token, user }) {
-      if (user) token.uid = user.id;
-      return token;
-    },
-    session({ session, token }) {
-      if (token.uid && session.user) session.user.id = String(token.uid);
-      return session;
-    },
-  },
-};
-
-const result: NextAuthResult = NextAuth(config);
+});
 
 export const handlers: NextAuthResult['handlers'] = result.handlers;
 export const auth: NextAuthResult['auth'] = result.auth;

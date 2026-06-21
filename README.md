@@ -25,7 +25,7 @@ radar-urbano/                          # monorepo pnpm
 │   └── worker/       # BullMQ: filas risk (hourly) e ingestion
 ├── packages/
 │   ├── core/         # domínio puro: 19 categorias BR, trust-score, risk-score, types
-│   ├── db/           # Drizzle ORM + PostGIS, 16 tabelas, migrações versionadas, seed
+│   ├── db/           # Drizzle ORM + PostGIS, 18 tabelas, migrações versionadas, seed
 │   ├── data-ingestion/ # SourceAdapter + 4 adapters stub (geojson, csv, isp-rj, public-api)
 │   └── config/       # presets tsconfig, Tailwind, tokens.css
 ├── .github/          # ISSUE_TEMPLATE, PR template, CODEOWNERS, workflow CI
@@ -45,8 +45,8 @@ radar-urbano/                          # monorepo pnpm
              │                    │                  │
              ▼                    ▼                  ▼
      packages/core          packages/db         Auth.js v5
-  (categories, trust,    (Drizzle + PostGIS,  (OAuth GitHub +
-   risk, types)           16 tabelas)          JWT sessions)
+  (categories, trust,    (Drizzle + PostGIS,  (Google OAuth +
+   risk, types)           18 tabelas)          Credentials + JWT)
              │                    ▲
              └────────────────────┤
                                   │
@@ -59,27 +59,46 @@ radar-urbano/                          # monorepo pnpm
  (SourceAdapter + 4 stubs)
        │
        ▼
-  Redis 7 (filas BullMQ)
+  Redis 7 (filas BullMQ + rate-limit)
 ```
 
 ---
 
 ## Stack
 
-| Camada            | Tecnologia                                                      |
-| ----------------- | --------------------------------------------------------------- |
-| Framework web     | Next.js 15 (App Router) + React 19                              |
-| Linguagem         | TypeScript 5 (strict em todos os pacotes)                       |
-| Estilo            | Tailwind CSS 3 + tokens de design customizados                  |
-| ORM / Schema      | Drizzle ORM + drizzle-kit                                       |
-| Banco de dados    | PostgreSQL 16 + PostGIS 3.4 (SRID 4326 / WGS84)                 |
-| Filas assíncronas | BullMQ 5 + Redis 7                                              |
-| Autenticação      | Auth.js v5 (OAuth GitHub; e-mail/credenciais é trabalho futuro) |
-| Mapa              | MapLibre GL JS 4 (WebGL, tiles vetoriais)                       |
-| Testes            | Vitest 2                                                        |
-| Gerenciador       | pnpm 9 (workspaces)                                             |
-| CI                | GitHub Actions (lint → typecheck → test → build)                |
-| Containers        | Docker Compose (postgres/redis/web/worker/adminer)              |
+| Camada              | Tecnologia                                                            |
+| ------------------- | --------------------------------------------------------------------- |
+| Framework web       | Next.js 15 (App Router) + React 19                                    |
+| Linguagem           | TypeScript 5 (strict em todos os pacotes)                             |
+| Estilo              | Tailwind CSS 3 + tokens de design customizados                        |
+| ORM / Schema        | Drizzle ORM + drizzle-kit                                             |
+| Banco de dados      | PostgreSQL 16 + PostGIS 3.4 (SRID 4326 / WGS84)                       |
+| Filas assíncronas   | BullMQ 5 + Redis 7                                                    |
+| Autenticação        | Auth.js v5 (Google OAuth + e-mail/senha via Credentials); sessões JWT |
+| E-mail transacional | Resend (fallback de dev: código logado no console)                    |
+| Senhas              | bcryptjs (10 rounds)                                                  |
+| Rate-limit          | ioredis + janela fixa por chave                                       |
+| Mapa                | MapLibre GL JS 4 (WebGL, tiles vetoriais)                             |
+| Testes              | Vitest 2                                                              |
+| Gerenciador         | pnpm 9 (workspaces)                                                   |
+| CI                  | GitHub Actions (lint → typecheck → test → build)                      |
+| Containers          | Docker Compose (postgres/redis/web/worker/adminer)                    |
+
+---
+
+## Conta & Acesso
+
+O acesso a dados de incidentes e ao mapa exige autenticação. A landing page (`/`) é pública; `/mapa`, `/painel`, `/reportar` e as APIs `/api/incidents`, `/api/tiles` e `/api/risk` exigem login.
+
+**Cadastro com verificação de e-mail:**
+
+1. Preencha nome, e-mail e senha (mín. 8 caracteres) em `/cadastrar`.
+2. Um código de 6 dígitos é enviado por e-mail via Resend.
+   - **Em desenvolvimento** (sem `RESEND_API_KEY`): o código é exibido no log do servidor — não há envio real.
+3. Insira o código em `/verificar` para ativar a conta.
+4. Faça login em `/entrar` com e-mail/senha **ou** via Google OAuth.
+
+> Detalhes do sistema de autenticação e gating: [`docs/architecture/auth-e-acesso.md`](docs/architecture/auth-e-acesso.md)
 
 ---
 
@@ -97,13 +116,20 @@ pnpm install
 
 # 2. Configure as variáveis de ambiente
 cp .env.example .env
-# Edite AUTH_SECRET (mínimo 32 bytes) e, opcionalmente, credenciais OAuth GitHub
+# Obrigatório: AUTH_SECRET (mín. 32 bytes)
+# Opcional: AUTH_GOOGLE_ID/SECRET (OAuth Google), RESEND_API_KEY (e-mail real)
 
 # 3. Suba os serviços (Postgres+PostGIS, Redis, web, worker, Adminer)
 docker compose up -d
 
 # 4. Aplique migrações e popule dados de referência
 pnpm db:migrate && pnpm db:seed
+```
+
+Em desenvolvimento sem `RESEND_API_KEY`, o código de verificação aparece no log do container `web`:
+
+```
+[dev] código de verificação para usuario@exemplo.com: 847291
 ```
 
 ### URLs disponíveis
@@ -143,14 +169,17 @@ pnpm db:seed       # popula tabelas de referência
 
 ## Roadmap
 
-### v0.1 — Fundação (atual)
+### v0.1 — Fundação
 
 - [x] Monorepo pnpm com 4 pacotes e 2 apps
-- [x] Schema completo (16 tabelas, PostGIS, SRID 4326)
+- [x] Schema completo (18 tabelas, PostGIS, SRID 4326)
 - [x] 19 categorias de incidentes para o contexto brasileiro
 - [x] Trust Score e Risk Score com testes Vitest
-- [x] Auth.js v5 (OAuth GitHub)
-- [x] API REST `/api/incidents` (GET bbox + POST)
+- [x] Auth.js v5: Google OAuth + e-mail/senha (Credentials), sessões JWT
+- [x] Cadastro com verificação de e-mail por código de 6 dígitos (Resend)
+- [x] Gating por middleware: `/mapa`, `/painel`, `/reportar` e APIs de dados exigem login
+- [x] API REST `/api/incidents` (GET bbox + POST autenticado com rate-limit e auditoria)
+- [x] Relato autenticado: `authorId` da sessão + flag `anonymous` + rate-limit (10/min) + `access_logs`
 - [x] Mapa interativo MapLibre GL com heatmap
 - [x] Painel de risco por bairro
 - [x] Worker BullMQ: recompute de risco (hourly) + ingestão
@@ -159,8 +188,11 @@ pnpm db:seed       # popula tabelas de referência
 - [x] CI GitHub Actions (lint/typecheck/test/build)
 - [x] Governança (CoC, CONTRIBUTING, SECURITY, GOVERNANCE, LICENSE)
 
-### v0.2 — Dados reais e moderação
+### v0.2 — Anti-scraping e dados reais
 
+- [ ] **Tiles raster renderizados no servidor** (`/api/tiles/...`) substituindo o GET em massa de incidentes — os tiles entregam apenas o visual, sem expor GeoJSON bruto (anti-scraping)
+- [ ] Detalhe por clique via `/api/incidents/near` (ponto + raio, autenticado)
+- [ ] Remoção do `GET /api/incidents` em massa após migração do mapa para tiles
 - [ ] Ingestão real ISP-RJ (substituir adapters stub)
 - [ ] Polígonos de bairros do Rio de Janeiro (GeoJSON oficial)
 - [ ] UI de moderação para operadores

@@ -49,19 +49,27 @@ POSTGRES_PASSWORD=radar
 POSTGRES_DB=radar_urbano
 DATABASE_URL=postgresql://radar:radar@postgres:5432/radar_urbano
 
-# Redis (BullMQ)
+# Redis (BullMQ + rate-limit)
 REDIS_URL=redis://redis:6379
 
 # Auth.js — troque por uma string aleatória de 32+ bytes
 AUTH_SECRET=troque-por-uma-string-aleatoria-de-32-bytes
 AUTH_URL=http://localhost:3000
 
-# OAuth GitHub (único provedor configurado na v0.1; e-mail/credenciais é trabalho futuro)
-AUTH_GITHUB_ID=
-AUTH_GITHUB_SECRET=
+# OAuth Google (opcional em dev — sem as chaves o botão Google não aparece)
+AUTH_GOOGLE_ID=
+AUTH_GOOGLE_SECRET=
+
+# Resend (e-mail transacional)
+# Sem a chave, o código de verificação é logado no console do servidor.
+RESEND_API_KEY=
+EMAIL_FROM="Radar Urbano <no-reply@radarurbano.org>"
 
 # MapLibre — tiles OSM de demonstração
 NEXT_PUBLIC_MAP_STYLE_URL=https://demotiles.maplibre.org/style.json
+
+# Cache de tiles (segundos) — apenas para PR3/tiles, ignorado por ora
+TILE_CACHE_TTL=300
 ```
 
 > **Atenção:** nunca comite o arquivo `.env` com credenciais reais. O `.gitignore` já exclui `.env`.
@@ -77,7 +85,7 @@ Os seguintes serviços sobem:
 | Serviço    | Imagem                   | Porta local | Descrição                         |
 | ---------- | ------------------------ | ----------- | --------------------------------- |
 | `postgres` | `postgis/postgis:16-3.4` | 5432        | Banco de dados com PostGIS        |
-| `redis`    | `redis:7-alpine`         | 6379        | Filas BullMQ                      |
+| `redis`    | `redis:7-alpine`         | 6379        | Filas BullMQ e rate-limit         |
 | `web`      | Build local              | 3000        | Aplicação Next.js                 |
 | `worker`   | Build local              | —           | Worker BullMQ (sem porta pública) |
 | `adminer`  | `adminer:4`              | 8080        | Interface web do banco            |
@@ -94,7 +102,21 @@ pnpm db:seed
 - `db:migrate`: aplica as migrações SQL em `packages/db/migrations/` no banco PostgreSQL.
 - `db:seed`: popula as tabelas de referência (categorias, fontes iniciais).
 
-### 6. Acesse a aplicação
+### 6. Crie uma conta e verifique o e-mail
+
+Como o acesso ao mapa e painel exige autenticação:
+
+1. Acesse http://localhost:3000/cadastrar e preencha nome, e-mail e senha (mín. 8 caracteres).
+2. **Em dev sem `RESEND_API_KEY`:** o código de 6 dígitos aparece no log do container `web`:
+   ```
+   [dev] código de verificação para usuario@exemplo.com: 847291
+   ```
+3. Acesse http://localhost:3000/verificar e insira o código.
+4. Faça login em http://localhost:3000/entrar com e-mail/senha **ou** via Google (se configurado).
+
+Alternativamente, configure `AUTH_GOOGLE_ID` e `AUTH_GOOGLE_SECRET` para usar o fluxo OAuth Google, que não requer verificação de e-mail.
+
+### 7. Acesse a aplicação
 
 | URL                          | Descrição                      |
 | ---------------------------- | ------------------------------ |
@@ -188,3 +210,11 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ### Mapa não carrega
 
 Verifique se `NEXT_PUBLIC_MAP_STYLE_URL` está configurada e acessível. O valor padrão (`demotiles.maplibre.org`) requer conexão com a internet.
+
+### Login exige e-mail verificado
+
+O login por e-mail/senha retorna erro se o e-mail ainda não foi verificado. Siga o fluxo de verificação descrito no passo 6 acima. Usuários criados via OAuth Google são verificados automaticamente.
+
+### Código de verificação expirado
+
+O código expira em 15 minutos. Use o link "Reenviar código" na página `/verificar` para gerar um novo (cooldown de 60 segundos entre reenvios).

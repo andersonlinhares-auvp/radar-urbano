@@ -2,7 +2,7 @@
 
 ## Visão geral
 
-O Radar Urbano usa **PostgreSQL 16** com a extensão **PostGIS 3.4** (imagem Docker `postgis/postgis:16-3.4`). O schema é gerenciado via **Drizzle ORM** com migrações SQL versionadas em `packages/db/migrations/`. São 16 tabelas no total, divididas em grupos funcionais.
+O Radar Urbano usa **PostgreSQL 16** com a extensão **PostGIS 3.4** (imagem Docker `postgis/postgis:16-3.4`). O schema é gerenciado via **Drizzle ORM** com migrações SQL versionadas em `packages/db/migrations/`. São 18 tabelas no total, divididas em grupos funcionais.
 
 **SRID:** todas as colunas geoespaciais usam **SRID 4326** (WGS84 — latitude/longitude decimais).
 **Índices GiST:** criados em todas as colunas `geography` e `geometry` para buscas espaciais eficientes.
@@ -21,6 +21,8 @@ erDiagram
   users ||--o{ comments : "comenta"
   users ||--o{ alert_subscriptions : "assina"
   users ||--o{ notifications : "recebe"
+  users ||--o{ access_logs : "gera"
+  users }o--o{ email_verifications : "verifica"
 
   sources ||--o{ incidents : "origina"
 
@@ -50,6 +52,7 @@ erDiagram
     text image
     user_role role
     integer reputation
+    text password_hash
     timestamp created_at
   }
 
@@ -71,6 +74,25 @@ erDiagram
     text session_token PK
     uuid user_id FK
     timestamp expires
+  }
+
+  email_verifications {
+    uuid id PK
+    text email
+    text code_hash
+    timestamp expires_at
+    integer attempts
+    timestamp consumed_at
+    timestamp created_at
+  }
+
+  access_logs {
+    uuid id PK
+    uuid user_id FK
+    text action
+    jsonb meta
+    text ip
+    timestamp created_at
   }
 
   sources {
@@ -117,6 +139,7 @@ erDiagram
     timestamp occurred_at
     incident_status status
     integer trust_score
+    boolean anonymous
     timestamp created_at
   }
 
@@ -192,12 +215,14 @@ erDiagram
 
 ### Grupo: Autenticação (Auth.js)
 
-| Tabela                | Descrição                                                                                            |
-| --------------------- | ---------------------------------------------------------------------------------------------------- |
-| `users`               | Usuários do sistema. `reputation` (0–100) alimenta o fator A do Trust Score.                         |
-| `accounts`            | Provedores OAuth vinculados ao usuário (ex.: GitHub). PK composta `(provider, provider_account_id)`. |
-| `sessions`            | Sessões ativas. Auth.js gerencia o ciclo de vida.                                                    |
-| `verification_tokens` | Tokens de verificação de e-mail. PK composta `(identifier, token)`.                                  |
+| Tabela                | Descrição                                                                                                                                                               |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `users`               | Usuários do sistema. `reputation` (0–100) alimenta o fator A do Trust Score. `password_hash` armazena o hash bcrypt para login por credenciais.                         |
+| `accounts`            | Provedores OAuth vinculados ao usuário (ex.: Google). PK composta `(provider, provider_account_id)`.                                                                    |
+| `sessions`            | Sessões ativas. Auth.js gerencia o ciclo de vida.                                                                                                                       |
+| `verification_tokens` | Tokens de verificação internos do Auth.js. PK composta `(identifier, token)`.                                                                                           |
+| `email_verifications` | Códigos de 6 dígitos gerados no cadastro por e-mail/senha. `code_hash` é hash bcrypt do código. `attempts` limita tentativas erradas a 5. `consumed_at` marca uso.      |
+| `access_logs`         | Registro de ações sensíveis (ex.: relato criado). `action` identifica a operação; `meta` (JSONB) guarda dados contextuais; `user_id` pode ser nulo para ações anônimas. |
 
 ### Grupo: Fontes e categorias
 
@@ -215,13 +240,13 @@ erDiagram
 
 ### Grupo: Incidentes
 
-| Tabela            | Descrição                                                                                                                                                                            |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `incidents`       | Registro central. `ref_code` segue o padrão `RU-NNNN`. `location`: `geography(Point,4326)` + GiST. `trust_score` inteiro 0–100. Status: `PENDING → CONFIRMED / REJECTED → RESOLVED`. |
-| `verifications`   | CONFIRM ou DISPUTE por usuário. Alimenta o fator C do Trust Score.                                                                                                                   |
-| `votes`           | Votos numéricos (positivo/negativo) em incidentes.                                                                                                                                   |
-| `comments`        | Comentários textuais. Cascata `onDelete` quando o incidente é removido.                                                                                                              |
-| `evidence_assets` | Fotos (`IMAGE`) ou vídeos (`VIDEO`) anexados. Alimentam o fator E do Trust Score.                                                                                                    |
+| Tabela            | Descrição                                                                                                                                                                                                                                                       |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `incidents`       | Registro central. `ref_code` segue o padrão `RU-NNNN`. `location`: `geography(Point,4326)` + GiST. `trust_score` inteiro 0–100. Status: `PENDING → CONFIRMED / REJECTED → RESOLVED`. `anonymous`: quando verdadeiro, a identidade do autor não é exposta na UI. |
+| `verifications`   | CONFIRM ou DISPUTE por usuário. Alimenta o fator C do Trust Score.                                                                                                                                                                                              |
+| `votes`           | Votos numéricos (positivo/negativo) em incidentes.                                                                                                                                                                                                              |
+| `comments`        | Comentários textuais. Cascata `onDelete` quando o incidente é removido.                                                                                                                                                                                         |
+| `evidence_assets` | Fotos (`IMAGE`) ou vídeos (`VIDEO`) anexados. Alimentam o fator E do Trust Score.                                                                                                                                                                               |
 
 ### Grupo: Risco
 
@@ -269,7 +294,7 @@ Retenção e limpeza de registros antigos são **trabalho futuro** — nenhuma p
 
 ## Nota: migrações manuais (drizzle-kit + PostGIS)
 
-O `drizzle-kit` não reconhece `geography` como tipo nativo do PostgreSQL. Ao executar `drizzle-kit generate`, ele emite o tipo entre aspas duplas:
+O `drizzle-kit` não reconhece `geography` como tipo nativo do PostgreSQL. Ao executar `drizzle-kit generate`, ele emite o tipo entre aspas duplas inválidas:
 
 ```sql
 -- INCORRETO (gerado automaticamente):

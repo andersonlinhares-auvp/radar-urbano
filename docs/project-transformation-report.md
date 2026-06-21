@@ -51,7 +51,17 @@ O ponto de partida foi o projeto **StreetSignal**, uma aplicação de crowdsourc
 | SQL manual                     | Drizzle ORM + migrações versionadas            | Type-safety, migrações auditáveis, integração PostGIS via `customType`               |
 | Projeto monolítico             | Monorepo pnpm workspaces                       | Separação de domínio, reuso entre web e worker, builds independentes                 |
 
-### Adicionado
+### Adicionado (PR1 + PR2 — branch `feat/auth-gating`)
+
+#### Autenticação e controle de acesso (`apps/web`)
+
+- **Auth.js v5** com dois providers: Google OAuth e e-mail/senha (Credentials). Sessões JWT. Split-config para edge-safety: `auth.config.ts` (sem Node.js) para o middleware, `auth.ts` com DrizzleAdapter para rotas API.
+- **Cadastro com verificação por código de 6 dígitos:** `POST /api/register` cria usuário + insere em `email_verifications`; `POST /api/verify-email` valida código (bcrypt) e marca `users.email_verified`; `POST /api/verify-email/resend` com cooldown de 60 s e anti-enumeração.
+- **Gating por middleware** (`middleware.ts`): `/mapa`, `/painel`, `/reportar` → redirect para `/entrar`; `/api/tiles`, `/api/incidents`, `/api/risk` → 401 JSON. Landing pública.
+- **Relato autenticado:** `POST /api/incidents` exige sessão, deriva `authorId` da sessão, aceita flag `anonymous`, aplica rate-limit Redis (10/min por userId) e grava em `access_logs`.
+- **Novas tabelas no schema:** `email_verifications` (código + hash + TTL + tentativas) e `access_logs` (action, userId, meta JSONB, ip). Campo `password_hash` em `users`. Campo `anonymous` em `incidents`.
+- **Novas libs:** `lib/password.ts` (bcryptjs), `lib/verification.ts` (generateCode, hashCode, verifyCode, TTL/MAX_ATTEMPTS/RESEND_COOLDOWN_MS), `lib/email.ts` (Resend + fallback dev), `lib/rate-limit.ts` (janela fixa Redis), `lib/redis.ts` (ioredis), `lib/audit.ts` (logAccess), `lib/session.ts` (requireSession).
+- **Novas envs:** `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `RESEND_API_KEY`, `EMAIL_FROM`, `TILE_CACHE_TTL` (reservada para PR3).
 
 #### `packages/core` — domínio puro
 
@@ -128,15 +138,17 @@ O ponto de partida foi o projeto **StreetSignal**, uma aplicação de crowdsourc
 
 Os próximos passos estão ordenados por impacto esperado para uma operação real do Radar Urbano no Rio de Janeiro.
 
-1. **Conectar dados ISP-RJ reais** — implementar o adapter `isp-rj` com acesso à API ou arquivo CSV de ocorrências. O contrato `SourceAdapter` já existe; basta substituir o stub.
-2. **Importar polígonos de bairros do Rio** — usar o GeoJSON oficial da Prefeitura (160 bairros) para popular a tabela `regions`, habilitando agrupamento geográfico real no painel de risco.
-3. **UI de moderação** — tela autenticada para operadores revisarem incidentes `PENDING`, aprovarem com `CONFIRMED` ou rejeitarem com `REJECTED`. Atualiza trust score do autor automaticamente.
-4. **Geocoding por seleção de ponto no mapa** — melhorar UX de criação de relatos: o usuário clica no mapa para definir localização em vez de digitar endereço.
-5. **Notificações push e e-mail reais** — o schema (`alert_subscriptions`, `notifications`) já existe. Integrar provedor de e-mail (Resend/SendGrid) e Web Push API.
-6. **Retenção e limpeza de snapshots** — `risk_scores` é append-only por design (auditabilidade). Implementar job de compactação que mantém apenas N snapshots por região após X dias.
-7. **Testes E2E** — Playwright cobrindo fluxos críticos: autenticação, criação de relato, visualização do mapa, painel de risco.
-8. **Deploy em produção** — VPS (Railway / Render / VPS própria), domínio, TLS, variáveis de ambiente de produção, monitoramento (Sentry, Prometheus/Grafana).
-9. **Plugin ESLint do Next.js** — adicionar `eslint-config-next` ao workspace `apps/web` para capturar erros específicos do framework (Image, Link, etc.).
+1. ~~**Autenticação e gating**~~ **FEITO (PR1 + PR2)** — Google OAuth + e-mail/senha com verificação por código; middleware protegendo `/mapa`, `/painel`, `/reportar` e APIs de dados.
+2. **Tiles anti-scraping (PR3 — em andamento)** — substituir o `GET /api/incidents` em massa por tiles raster renderizados no servidor (`/api/tiles/{z}/{x}/{y}.png`) e endpoint de detalhe por clique (`/api/incidents/near`). Hoje o controle é login + rate-limit; os tiles eliminam a exposição de GeoJSON bruto.
+3. **Conectar dados ISP-RJ reais** — implementar o adapter `isp-rj` com acesso à API ou arquivo CSV de ocorrências. O contrato `SourceAdapter` já existe; basta substituir o stub.
+4. **Importar polígonos de bairros do Rio** — usar o GeoJSON oficial da Prefeitura (160 bairros) para popular a tabela `regions`, habilitando agrupamento geográfico real no painel de risco.
+5. **UI de moderação** — tela autenticada para operadores revisarem incidentes `PENDING`, aprovarem com `CONFIRMED` ou rejeitarem com `REJECTED`. Atualiza trust score do autor automaticamente.
+6. **Geocoding por seleção de ponto no mapa** — melhorar UX de criação de relatos: o usuário clica no mapa para definir localização em vez de digitar endereço.
+7. **Notificações push e e-mail reais** — o schema (`alert_subscriptions`, `notifications`) já existe. Integrar Resend (já adicionado como dependência) e Web Push API.
+8. **Retenção e limpeza de snapshots** — `risk_scores` é append-only por design (auditabilidade). Implementar job de compactação que mantém apenas N snapshots por região após X dias.
+9. **Testes E2E** — Playwright cobrindo fluxos críticos: cadastro, verificação de e-mail, login, criação de relato, visualização do mapa, painel de risco.
+10. **Deploy em produção** — VPS (Railway / Render / VPS própria), domínio, TLS, variáveis de ambiente de produção, monitoramento (Sentry, Prometheus/Grafana).
+11. **Plugin ESLint do Next.js** — adicionar `eslint-config-next` ao workspace `apps/web` para capturar erros específicos do framework (Image, Link, etc.).
 
 ---
 
@@ -209,7 +221,10 @@ Os próximos passos estão ordenados por impacto esperado para uma operação re
 | 9          | Endurecer SQL de intervalo no worker                                                                                                                                               | Queries com `NOW() - INTERVAL '...'` devem usar parâmetros tipados                                                 |
 | 10         | Deploy em produção (VPS + domínio + TLS)                                                                                                                                           | Pré-requisito para operação real e coleta de dados reais                                                           |
 | 11         | Atribuir `neighborhood_id` aos incidentes via point-in-polygon (ST_Within/ST_Contains) — sem isso o risk score por bairro fica inerte (o worker faz INNER JOIN em neighborhood_id) | Sem polígonos de bairros carregados e neighborhood_id preenchido, o recompute de risco não produz resultados úteis |
-| 12         | Autenticar/autorizar `POST /api/incidents` e derivar `authorId` da sessão (na v0.1 a criação é aberta)                                                                             | Necessário para vincular reputação ao autor real e evitar spam anônimo                                             |
+| 12         | ~~Autenticar/autorizar `POST /api/incidents` e derivar `authorId` da sessão~~ **FEITO (PR2)**                                                                                      | Relato agora exige login; `authorId` vem da sessão; rate-limit + auditoria implementados.                          |
+| 13         | **Tiles anti-scraping** (`/api/tiles/{z}/{x}/{y}.png`) + detalhe por clique (`/api/incidents/near`) + remoção do `GET /api/incidents` em massa — **pendente (PR3)**                | Hoje o controle é login + rate-limit; o GET em massa ainda existe. Tiles substituem a exposição de GeoJSON bruto.  |
+| 14         | Resolver follow-up: `logAccess` é chamado após `return 201` — se falhar, o relato já foi criado (log é melhor-esforço, não transacional)                                           | Avaliar envolver `logAccess` na transação ou aceitar comportamento atual como intencional.                         |
+| 15         | Resolver follow-up: `categorySlug` e `sourceId` chegam do corpo como `unknown` sem validação de tipo antes de entrar em `createIncident`                                           | Adicionar Zod ou validação explícita de tipo antes de chamar `getCategory`/insert.                                 |
 
 ---
 
@@ -217,4 +232,4 @@ Os próximos passos estão ordenados por impacto esperado para uma operação re
 
 O Radar Urbano transformou um protótipo de crowdsourcing simples (StreetSignal) em uma plataforma de inteligência urbana completa. A substituição do Supabase por Postgres+PostGIS self-hosted eliminou o vendor lock-in e habilitou operações geoespaciais nativas. A troca de Leaflet por MapLibre GL entregou heatmap, tiles vetoriais e performance mobile. A adição de Auth.js, trust score, risk score, workers BullMQ e pipeline de ingestão criou a infraestrutura necessária para dados confiáveis e processamento assíncrono. A governança completa (CoC, CONTRIBUTING, GOVERNANCE, CI, templates de issue/PR) prepara o projeto para colaboração open source.
 
-A fundação está pronta. Os próximos passos prioritários são dados reais (ISP-RJ), polígonos de bairros e moderação — os três pilares que tornarão o Radar Urbano operacionalmente útil para os cidadãos do Rio de Janeiro.
+A branch `feat/auth-gating` (PR1 + PR2) completou o sistema de conta e privacidade: autenticação por Google OAuth e e-mail/senha com verificação por código de 6 dígitos via Resend, gating por middleware protegendo todas as rotas de dados, relatos vinculados ao autor da sessão com flag de anonimato, rate-limit Redis e auditoria via `access_logs`. O próximo passo imediato (PR3) é substituir o `GET /api/incidents` em massa por tiles raster renderizados no servidor, eliminando a exposição de GeoJSON bruto mesmo para usuários autenticados.

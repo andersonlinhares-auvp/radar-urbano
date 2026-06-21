@@ -10,7 +10,7 @@ import { requireSession } from '@/lib/session';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const TTL = Number(process.env.TILE_CACHE_TTL ?? 300);
+const TTL = Number(process.env.TILE_CACHE_TTL) || 300;
 const RAMP = ['#3fb6a8', '#a9cf7e', '#e0a93b', '#d2702f', '#a8332f'];
 
 interface Row extends Record<string, unknown> {
@@ -34,11 +34,15 @@ export async function GET(
     y = Number(ys.replace('.png', ''));
   if (![z, x, y].every(Number.isFinite))
     return NextResponse.json({ error: 'Tile inválido.' }, { status: 400 });
+  if (z < 0 || z > 22 || x < 0 || x >= 2 ** z || y < 0 || y >= 2 ** z)
+    return NextResponse.json({ error: 'Tile fora de alcance.' }, { status: 400 });
 
   const cacheKey = `tile:${z}:${x}:${y}`;
   const cached = await redis.getBuffer(cacheKey);
   if (cached)
-    return new NextResponse(new Uint8Array(cached), { headers: { 'content-type': 'image/png' } });
+    return new NextResponse(new Uint8Array(cached), {
+      headers: { 'content-type': 'image/png', 'cache-control': 'private, max-age=300' },
+    });
 
   const b = tileToBBox(z, x, y);
   const rows = await db.execute<Row>(sql`
@@ -52,11 +56,13 @@ export async function GET(
   const cx = canvas.getContext('2d');
   for (const r of rows) {
     const { px, py } = lngLatToTilePixel(Number(r.lng), Number(r.lat), z, x, y);
-    const weight = Math.max(0.2, Number(r.trust_score) / 100);
-    const radius = 18 + 22 * weight;
-    const color = RAMP[Math.min(RAMP.length - 1, Math.floor(weight * RAMP.length))] ?? RAMP[0]!;
+    const trust = Number(r.trust_score) / 100;
+    const radiusWeight = Math.max(0.2, trust);
+    const radius = 18 + 22 * radiusWeight;
+    const idx = Math.min(RAMP.length - 1, Math.floor(Math.min(1, trust) * RAMP.length));
+    const color = RAMP[idx] ?? RAMP[0]!;
     const grad = cx.createRadialGradient(px, py, 0, px, py, radius);
-    grad.addColorStop(0, hexToRgba(color, 0.55 * weight));
+    grad.addColorStop(0, hexToRgba(color, 0.55 * radiusWeight));
     grad.addColorStop(1, hexToRgba(color, 0));
     cx.fillStyle = grad;
     cx.beginPath();
@@ -65,7 +71,9 @@ export async function GET(
   }
   const png = canvas.toBuffer('image/png');
   await redis.set(cacheKey, png, 'EX', TTL);
-  return new NextResponse(new Uint8Array(png), { headers: { 'content-type': 'image/png' } });
+  return new NextResponse(new Uint8Array(png), {
+    headers: { 'content-type': 'image/png', 'cache-control': 'private, max-age=300' },
+  });
 }
 
 function hexToRgba(hex: string, a: number): string {

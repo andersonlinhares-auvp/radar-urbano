@@ -18,6 +18,9 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U radar" --health-interval 5s
           --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
     env:
       DATABASE_URL: postgresql://radar:radar@localhost:5432/radar_urbano
       REDIS_URL: redis://localhost:6379
@@ -25,10 +28,11 @@ jobs:
       NEXT_PUBLIC_MAP_STYLE_URL: https://demotiles.maplibre.org/style.json
     steps:
       - uses: actions/checkout@v4
+      # Lê a versão do pnpm de packageManager (package.json); não passar "version"
+      # para evitar ERR_PNPM_BAD_PM_VERSION por dupla definição.
       - uses: pnpm/action-setup@v4
-        with: { version: 9 }
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: 'pnpm' }
+        with: { node-version: 22, cache: 'pnpm' }
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:migrate && pnpm db:seed
       - run: pnpm lint

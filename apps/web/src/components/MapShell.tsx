@@ -1,10 +1,40 @@
+// apps/web/src/components/MapShell.tsx
 'use client';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { IconRail } from './IconRail';
-import { Map } from './Map';
+import { Map, type MapHandle, type RecentIncident } from './Map';
+
+/** Simple relative-time formatter (pt-BR). */
+function relTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return 'agora';
+  if (mins < 60) return `há ${mins} min`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `há ${hrs} h`;
+  const days = Math.floor(hrs / 24);
+  return `há ${days} d`;
+}
 
 export function MapShell() {
   const [layersOpen, setLayersOpen] = useState(false);
+  const [recent, setRecent] = useState<RecentIncident[]>([]);
+  const mapRef = useRef<MapHandle>(null);
+  const fetchingRef = useRef(false);
+
+  function handleBboxChange(bbox: [number, number, number, number]) {
+    if (fetchingRef.current) return; // simple in-flight guard
+    fetchingRef.current = true;
+    fetch(`/api/incidents/recent?bbox=${bbox.join(',')}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((data: { incidents: RecentIncident[] }) => setRecent(data.incidents))
+      .catch(() => {
+        /* silently ignore; user may be unauthenticated or rate-limited */
+      })
+      .finally(() => {
+        fetchingRef.current = false;
+      });
+  }
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-superficie">
@@ -12,7 +42,7 @@ export function MapShell() {
 
       {/* Map column */}
       <div className="relative flex-1">
-        <Map />
+        <Map ref={mapRef} onBboxChange={handleBboxChange} />
 
         {/* Top floating controls */}
         <div className="pointer-events-none absolute left-4 right-4 top-4 flex flex-wrap items-start gap-2.5">
@@ -93,6 +123,42 @@ export function MapShell() {
           </div>
         </div>
       </div>
+
+      {/* Right panel — últimas ocorrências */}
+      <aside className="flex w-72 flex-col border-l border-linha bg-superficie">
+        <div className="flex items-center justify-between border-b border-linha px-4 py-3">
+          <span className="font-mono text-[10px] tracking-wide text-[#8a857a]">
+            ÚLTIMAS OCORRÊNCIAS · {recent.length}
+          </span>
+        </div>
+        <ul className="flex-1 overflow-y-auto">
+          {recent.length === 0 && (
+            <li className="px-4 py-6 text-center text-xs text-[#8a857a]">
+              Mova o mapa para carregar ocorrências da área visível.
+            </li>
+          )}
+          {recent.map((item) => (
+            <li key={item.id}>
+              <button
+                type="button"
+                onClick={() => mapRef.current?.showIncident(item)}
+                className="flex w-full items-start gap-3 border-b border-linha px-4 py-3 text-left hover:bg-[#f5f4f2] focus:outline-none focus-visible:ring-2 focus-visible:ring-petroleo-500"
+              >
+                <span
+                  className="mt-0.5 h-3 w-3 flex-shrink-0 rounded-sm"
+                  style={{ background: item.categoryColor ?? '#0e5c63' }}
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-medium text-tinta">{item.title}</p>
+                  <p className="mt-0.5 truncate text-[11px] text-[#8a857a]">
+                    {item.categoryLabel} · {item.status} · {relTime(item.occurredAt)}
+                  </p>
+                </div>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </aside>
     </div>
   );
 }

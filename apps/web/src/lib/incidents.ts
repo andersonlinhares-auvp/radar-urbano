@@ -6,12 +6,13 @@ import { generateRefCode } from './ref-code.js';
 export interface CreateIncidentInput {
   categorySlug: CategorySlug;
   sourceId: string;
-  authorId?: string;
+  authorId: string;
   title: string;
   description?: string;
   lng: number;
   lat: number;
   occurredAt: Date;
+  anonymous: boolean;
 }
 
 interface IncidentRow extends Record<string, unknown> {
@@ -140,6 +141,7 @@ export async function createIncident(input: CreateIncidentInput) {
       neighborhoodId: sql`(SELECT id FROM neighborhoods WHERE ST_Contains(geom, ${point}) LIMIT 1)`,
       occurredAt: input.occurredAt,
       trustScore,
+      anonymous: input.anonymous,
     })
     .returning();
   return row;

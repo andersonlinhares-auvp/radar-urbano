@@ -59,10 +59,10 @@ export async function GET(req: Request) {
       LIMIT 10
     `);
 
-    await logAccess('list', {
+    void logAccess('list', {
       userId: session.user.id,
       meta: { bbox },
-    });
+    }).catch((err) => console.error('[recent] audit error:', err));
 
     const incidents = rows.map((row) => ({
       id: row.id,

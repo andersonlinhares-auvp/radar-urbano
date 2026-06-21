@@ -55,6 +55,10 @@ export const Map = forwardRef<MapHandle, MapProps>(function Map({ onBboxChange }
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
+  const onBboxChangeRef = useRef(onBboxChange);
+  useEffect(() => {
+    onBboxChangeRef.current = onBboxChange;
+  }, [onBboxChange]);
 
   useImperativeHandle(ref, () => ({
     showIncident(item: RecentIncident) {
@@ -96,9 +100,9 @@ export const Map = forwardRef<MapHandle, MapProps>(function Map({ onBboxChange }
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
 
     function emitBbox() {
-      if (!onBboxChange) return;
+      if (!onBboxChangeRef.current) return;
       const b = map.getBounds();
-      onBboxChange([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]);
+      onBboxChangeRef.current([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]);
     }
 
     map.on('load', () => {
@@ -143,7 +147,7 @@ export const Map = forwardRef<MapHandle, MapProps>(function Map({ onBboxChange }
       popupRef.current = null;
       map.remove();
     };
-  }, []);  
+  }, []);
 
   return <div ref={containerRef} className="h-full w-full" />;
 });

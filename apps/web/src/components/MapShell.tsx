@@ -21,19 +21,31 @@ export function MapShell() {
   const [recent, setRecent] = useState<RecentIncident[]>([]);
   const mapRef = useRef<MapHandle>(null);
   const fetchingRef = useRef(false);
+  const pendingBboxRef = useRef<[number, number, number, number] | null>(null);
 
-  function handleBboxChange(bbox: [number, number, number, number]) {
-    if (fetchingRef.current) return; // simple in-flight guard
+  function fetchRecent(bbox: [number, number, number, number]) {
     fetchingRef.current = true;
+    pendingBboxRef.current = null;
     fetch(`/api/incidents/recent?bbox=${bbox.join(',')}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
       .then((data: { incidents: RecentIncident[] }) => setRecent(data.incidents))
       .catch(() => {
-        /* silently ignore; user may be unauthenticated or rate-limited */
+        /* silently ignore auth/rate-limit errors */
       })
       .finally(() => {
         fetchingRef.current = false;
+        if (pendingBboxRef.current) {
+          fetchRecent(pendingBboxRef.current);
+        }
       });
+  }
+
+  function handleBboxChange(bbox: [number, number, number, number]) {
+    if (fetchingRef.current) {
+      pendingBboxRef.current = bbox; // remember latest while in-flight
+      return;
+    }
+    fetchRecent(bbox);
   }
 
   return (

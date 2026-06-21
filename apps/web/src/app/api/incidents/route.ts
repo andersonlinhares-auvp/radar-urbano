@@ -1,23 +1,10 @@
 import { NextResponse } from 'next/server';
-import { listIncidentsGeoJSON, createIncident } from '@/lib/incidents';
+import { createIncident } from '@/lib/incidents';
 import { requireSession } from '@/lib/session';
 import { rateLimit } from '@/lib/rate-limit';
 import { logAccess } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
-
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const bboxParam = searchParams.get('bbox');
-  let bbox: [number, number, number, number] | undefined;
-  if (bboxParam) {
-    const parts = bboxParam.split(',').map(Number);
-    if (parts.length === 4 && parts.every((n) => Number.isFinite(n))) {
-      bbox = parts as [number, number, number, number];
-    }
-  }
-  return NextResponse.json(await listIncidentsGeoJSON(bbox));
-}
 
 export async function POST(req: Request) {
   const session = await requireSession();

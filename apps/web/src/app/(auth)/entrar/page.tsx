@@ -77,11 +77,6 @@ function EntrarForm() {
           autoComplete="current-password"
           error={erro || undefined}
         />
-        {erro && (
-          <p role="alert" className="text-xs text-risco-critico -mt-2">
-            {erro}
-          </p>
-        )}
         <AuthButton
           variant="primary"
           type="submit"

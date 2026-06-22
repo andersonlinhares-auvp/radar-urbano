@@ -20,6 +20,8 @@ interface Row extends Record<string, unknown> {
   category_color: string;
   lng: number;
   lat: number;
+  neighborhood: string | null;
+  confirmations: number;
 }
 
 export async function GET(req: Request) {
@@ -51,9 +53,16 @@ export async function GET(req: Request) {
         c.label  AS category_label,
         c.color  AS category_color,
         ST_X(i.location::geometry) AS lng,
-        ST_Y(i.location::geometry) AS lat
+        ST_Y(i.location::geometry) AS lat,
+        nb.name  AS neighborhood,
+        (
+          SELECT count(*)
+          FROM verifications v
+          WHERE v.incident_id = i.id AND v.kind = 'CONFIRM'
+        ) AS confirmations
       FROM incidents i
       JOIN incident_categories c ON c.slug = i.category_slug
+      LEFT JOIN neighborhoods nb ON nb.id = i.neighborhood_id
       WHERE i.location && ST_MakeEnvelope(${w}, ${s}, ${e}, ${n}, 4326)::geography
       ORDER BY i.occurred_at DESC
       LIMIT 10
@@ -75,6 +84,8 @@ export async function GET(req: Request) {
       occurredAt: row.occurred_at,
       lng: Number(row.lng),
       lat: Number(row.lat),
+      neighborhood: row.neighborhood ?? null,
+      confirmations: Number(row.confirmations),
     }));
 
     return NextResponse.json({ incidents });

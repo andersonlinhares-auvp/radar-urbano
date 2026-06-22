@@ -3,6 +3,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import maplibregl, { type StyleSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { STATUS_LABELS, trustLabel, relativeTime } from '@/lib/labels';
 
 const BASE_STYLE: StyleSpecification = {
   version: 8,
@@ -31,14 +32,25 @@ function escapeHtml(s: string): string {
 }
 
 function buildPopupHTML(item: RecentIncident): string {
+  const statusText = STATUS_LABELS[item.status] ?? item.status;
+  const trust = trustLabel(item.trustScore);
+  const time = relativeTime(item.occurredAt);
+  const neighborhoodPart = item.neighborhood ? ` · ${escapeHtml(item.neighborhood)}` : '';
+  const confirmText =
+    item.confirmations === 1
+      ? 'Confirmado por 1 pessoa'
+      : item.confirmations > 1
+        ? `Confirmado por ${item.confirmations} pessoas`
+        : 'Nenhuma confirmação ainda';
+
   return (
     `<div style="font-family:'IBM Plex Sans',sans-serif;width:240px;">` +
     `<div style="height:4px;background:${item.categoryColor ?? '#0e5c63'};"></div>` +
     `<div style="padding:12px 14px;">` +
-    `<strong style="font-size:14px;font-weight:600;color:#11181f;">${escapeHtml(item.title)}</strong><br/>` +
-    `<span style="font-size:12px;color:#5a6470;">${escapeHtml(item.categoryLabel)} · ${escapeHtml(item.status)}</span><br/>` +
-    `<span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a857a;">${escapeHtml(item.refCode)}</span>` +
-    ` · <span style="font-size:11px;color:#8a857a;">confiança ${item.trustScore}</span>` +
+    `<strong style="font-size:14px;font-weight:600;color:#11181f;">${escapeHtml(item.title)}</strong>` +
+    `<div style="margin-top:4px;font-size:12px;color:#5a6470;">${escapeHtml(item.categoryLabel)} · ${escapeHtml(time)}${neighborhoodPart}</div>` +
+    `<div style="margin-top:4px;font-size:12px;color:#5a6470;">${escapeHtml(statusText)} · ${escapeHtml(confirmText)}</div>` +
+    `<div style="margin-top:6px;display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#11181f;background:#e8f5f3;padding:2px 7px;border-radius:100px;">${escapeHtml(trust)}</div>` +
     `</div></div>`
   );
 }
@@ -54,6 +66,8 @@ export type RecentIncident = {
   occurredAt: string;
   lng: number;
   lat: number;
+  neighborhood?: string | null;
+  confirmations: number;
 };
 
 export type MapHandle = {

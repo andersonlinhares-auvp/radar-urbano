@@ -5,7 +5,7 @@ export interface DashboardStats {
   incidents24h: number;
   verifiedPct: number;
   criticalAlerts: number;
-  monitoredNeighborhoods: number;
+  neighborhoodsActive24h: number;
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
@@ -14,7 +14,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     verified: number;
     total: number;
     critical: number;
-    neighborhoods: number;
+    neighborhoods_active: number;
   }>(sql`
     SELECT
       (SELECT count(*) FROM incidents WHERE occurred_at > now() - interval '24 hours') AS incidents_24h,
@@ -22,7 +22,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       (SELECT count(*) FROM incidents WHERE occurred_at > now() - interval '24 hours') AS total,
       (SELECT count(*) FROM incidents i JOIN incident_categories c ON c.slug = i.category_slug
         WHERE i.occurred_at > now() - interval '24 hours' AND c.group = 'violencia_armada') AS critical,
-      (SELECT count(*) FROM neighborhoods) AS neighborhoods
+      (SELECT count(DISTINCT neighborhood_id) FROM incidents
+        WHERE occurred_at > now() - interval '24 hours' AND neighborhood_id IS NOT NULL) AS neighborhoods_active
   `);
   const total = Number(row?.total ?? 0);
   const verified = Number(row?.verified ?? 0);
@@ -30,7 +31,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     incidents24h: Number(row?.incidents_24h ?? 0),
     verifiedPct: total > 0 ? Math.round((verified / total) * 100) : 0,
     criticalAlerts: Number(row?.critical ?? 0),
-    monitoredNeighborhoods: Number(row?.neighborhoods ?? 0),
+    neighborhoodsActive24h: Number(row?.neighborhoods_active ?? 0),
   };
 }
 

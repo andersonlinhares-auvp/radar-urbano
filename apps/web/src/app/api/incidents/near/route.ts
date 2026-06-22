@@ -17,6 +17,8 @@ interface Row extends Record<string, unknown> {
   status: string;
   trust_score: number;
   occurred_at: string;
+  neighborhood: string | null;
+  confirmations: number;
 }
 
 export async function GET(req: Request) {
@@ -35,8 +37,16 @@ export async function GET(req: Request) {
     const [row] = await db.execute<Row>(sql`
       SELECT i.id, i.ref_code, i.title, i.description, i.status, i.trust_score,
              to_char(i.occurred_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS occurred_at,
-             c.label AS category_label, c.color AS category_color
-      FROM incidents i JOIN incident_categories c ON c.slug = i.category_slug
+             c.label AS category_label, c.color AS category_color,
+             nb.name AS neighborhood,
+             (
+               SELECT count(*)
+               FROM verifications v
+               WHERE v.incident_id = i.id AND v.kind = 'CONFIRM'
+             ) AS confirmations
+      FROM incidents i
+      JOIN incident_categories c ON c.slug = i.category_slug
+      LEFT JOIN neighborhoods nb ON nb.id = i.neighborhood_id
       WHERE ST_DWithin(i.location, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography, 1500)
       ORDER BY i.location <-> ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography
       LIMIT 1
@@ -57,6 +67,8 @@ export async function GET(req: Request) {
         status: row.status,
         trustScore: Number(row.trust_score),
         occurredAt: row.occurred_at,
+        neighborhood: row.neighborhood ?? null,
+        confirmations: Number(row.confirmations),
       },
     });
   } catch (err) {

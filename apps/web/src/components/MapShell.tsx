@@ -3,18 +3,7 @@
 import { useRef, useState } from 'react';
 import { IconRail } from './IconRail';
 import { Map, type MapHandle, type RecentIncident } from './Map';
-
-/** Simple relative-time formatter (pt-BR). */
-function relTime(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return 'agora';
-  if (mins < 60) return `há ${mins} min`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `há ${hrs} h`;
-  const days = Math.floor(hrs / 24);
-  return `há ${days} d`;
-}
+import { IncidentCard } from './map/IncidentCard';
 
 export function MapShell() {
   const [layersOpen, setLayersOpen] = useState(false);
@@ -42,7 +31,7 @@ export function MapShell() {
 
   function handleBboxChange(bbox: [number, number, number, number]) {
     if (fetchingRef.current) {
-      pendingBboxRef.current = bbox; // remember latest while in-flight
+      pendingBboxRef.current = bbox;
       return;
     }
     fetchRecent(bbox);
@@ -109,14 +98,38 @@ export function MapShell() {
         <div className="absolute bottom-4 left-4 min-w-[210px] rounded-md border border-linha bg-superficie/95 p-3.5 shadow-md backdrop-blur">
           <div className="mb-2.5 font-mono text-[10px] tracking-wide text-[#8a857a]">LEGENDA</div>
           <div className="flex flex-col gap-[7px] text-xs text-[#3a434c]">
-            <div className="flex items-center gap-2">
-              <span
-                className="h-2 w-6 rounded-[2px]"
-                style={{
-                  background: 'linear-gradient(90deg,#3fb6a8,#a9cf7e,#e0a93b,#d2702f,#a8332f)',
-                }}
-              />{' '}
-              Densidade de risco
+            {/* Heatmap scale */}
+            <div>
+              <div className="flex items-center gap-2">
+                <span
+                  className="h-2 w-24 rounded-[2px]"
+                  style={{
+                    background: 'linear-gradient(90deg,#3fb6a8,#a9cf7e,#e0a93b,#d2702f,#a8332f)',
+                  }}
+                />
+              </div>
+              <div className="mt-0.5 flex justify-between font-mono text-[9px] text-[#8a857a]">
+                <span>Baixa</span>
+                <span>Alta</span>
+              </div>
+              <div className="mt-0.5 text-[10px] text-[#8a857a]">Densidade de risco</div>
+            </div>
+            {/* Category pin legend */}
+            <div className="mt-1 flex flex-col gap-1">
+              {[
+                { color: '#A8332F', label: 'Violência armada / Assalto grave' },
+                { color: '#D2702F', label: 'Roubo / Tentativa' },
+                { color: '#E0A93B', label: 'Furto / Vandalismo' },
+                { color: '#3FB6A8', label: 'Mobilidade / Outros' },
+              ].map(({ color, label }) => (
+                <div key={color} className="flex items-center gap-2">
+                  <span
+                    className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
+                    style={{ background: color }}
+                  />
+                  <span className="text-[10px] text-[#3a434c]">{label}</span>
+                </div>
+              ))}
             </div>
             <div className="mt-1 text-[11px] text-[#8a857a]">
               Clique no mapa para ver a ocorrência mais próxima.
@@ -151,22 +164,7 @@ export function MapShell() {
           )}
           {recent.map((item) => (
             <li key={item.id}>
-              <button
-                type="button"
-                onClick={() => mapRef.current?.showIncident(item)}
-                className="flex w-full items-start gap-3 border-b border-linha px-4 py-3 text-left hover:bg-[#f5f4f2] focus:outline-none focus-visible:ring-2 focus-visible:ring-petroleo-500"
-              >
-                <span
-                  className="mt-0.5 h-3 w-3 flex-shrink-0 rounded-sm"
-                  style={{ background: item.categoryColor ?? '#0e5c63' }}
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13px] font-medium text-tinta">{item.title}</p>
-                  <p className="mt-0.5 truncate text-[11px] text-[#8a857a]">
-                    {item.categoryLabel} · {item.status} · {relTime(item.occurredAt)}
-                  </p>
-                </div>
-              </button>
+              <IncidentCard item={item} onClick={() => mapRef.current?.showIncident(item)} />
             </li>
           ))}
         </ul>

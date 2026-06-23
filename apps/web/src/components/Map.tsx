@@ -149,8 +149,14 @@ export const Map = forwardRef<MapHandle, MapProps>(function Map({ onBboxChange, 
       center: RIO,
       zoom: 11,
       attributionControl: { compact: true },
+      // Mapa sempre "de cima", sem rotação/inclinação (Ctrl+arrastar deixava torto).
+      dragRotate: false,
+      pitchWithRotate: false,
+      touchPitch: false,
     });
     mapRef.current = map;
+    map.dragRotate.disable();
+    map.touchZoomRotate.disableRotation();
 
     const popup = new maplibregl.Popup({ closeButton: true, maxWidth: '280px' });
     popupRef.current = popup;
@@ -180,13 +186,7 @@ export const Map = forwardRef<MapHandle, MapProps>(function Map({ onBboxChange, 
 
     map.on('moveend', emitBbox);
 
-    map.on('click', async (e) => {
-      const r = await fetch(`/api/incidents/near?lng=${e.lngLat.lng}&lat=${e.lngLat.lat}`);
-      if (!r.ok) return;
-      const { incident } = await r.json();
-      if (!incident) return;
-      popup.setLngLat(e.lngLat).setHTML(buildPopupHTML(incident)).addTo(map);
-    });
+    // O popup do relato só abre ao clicar no ícone (pin), nunca ao clicar perto no mapa.
 
     return () => {
       markersRef.current.forEach((m) => m.remove());

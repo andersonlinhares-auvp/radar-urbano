@@ -165,6 +165,8 @@ export const incidents = pgTable(
     status: incidentStatus('status').notNull().default('PENDING'),
     trustScore: integer('trust_score').notNull().default(0),
     anonymous: boolean('anonymous').notNull().default(false),
+    // Sinal informado pelo autor: "isso já aconteceu aqui antes?"
+    recurrenceHint: text('recurrence_hint').notNull().default('UNKNOWN'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({ locIdx: index('incidents_location_idx').using('gist', t.location) }),

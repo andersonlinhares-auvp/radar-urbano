@@ -1,6 +1,7 @@
 // apps/web/src/components/MapShell.tsx
 'use client';
 import { useRef, useState } from 'react';
+import Link from 'next/link';
 import { IconRail } from './IconRail';
 import { Map, type MapHandle, type RecentIncident } from './Map';
 import { IncidentCard } from './map/IncidentCard';
@@ -136,6 +137,17 @@ export function MapShell() {
             </div>
           </div>
         </div>
+
+        {/* Botão flutuante: reportar ocorrência */}
+        <Link
+          href="/reportar"
+          className="absolute bottom-20 right-4 z-10 flex items-center gap-2 rounded-full bg-petroleo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:bg-petroleo-500 active:bg-petroleo-900"
+        >
+          <span aria-hidden className="text-lg leading-none">
+            +
+          </span>
+          Reportar algo
+        </Link>
 
         {/* Bottom-right scale + attribution */}
         <div className="pointer-events-none absolute bottom-4 right-16 text-right">

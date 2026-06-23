@@ -171,6 +171,8 @@ export const incidents = pgTable(
     recurrenceHint: text('recurrence_hint').notNull().default('UNKNOWN'),
     // Identificador estável da fonte externa (dedup de ingestão). Nulo para reports community.
     externalId: text('external_id'),
+    sourceName: text('source_name'),
+    sourceUrl: text('source_url'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({

@@ -25,3 +25,10 @@ export interface SourceAdapter {
   fetch(params?: Record<string, unknown>): Promise<RawRecord[]>;
   normalize(raw: RawRecord): NormalizedIncident;
 }
+
+export interface NeighborhoodRef {
+  id: string;
+  name: string;
+  lng: number;
+  lat: number;
+}

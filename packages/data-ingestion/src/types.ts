@@ -8,6 +8,11 @@ export interface NormalizedIncident {
   lng: number;
   lat: number;
   occurredAt: Date;
+  // Campos opcionais de enriquecimento (sem breaking change para adapters existentes).
+  trustScore?: number; // 0–1; se ausente, o pipeline calcula via computeTrustScore.
+  sourceLabel?: string;
+  rawUrl?: string;
+  needsReview?: boolean;
 }
 
 export interface RawRecord {

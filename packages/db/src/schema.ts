@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import {
   pgTable,
   uuid,
@@ -9,6 +10,7 @@ import {
   pgEnum,
   customType,
   index,
+  uniqueIndex,
   primaryKey,
   jsonb,
 } from 'drizzle-orm/pg-core';
@@ -167,9 +169,17 @@ export const incidents = pgTable(
     anonymous: boolean('anonymous').notNull().default(false),
     // Sinal informado pelo autor: "isso já aconteceu aqui antes?"
     recurrenceHint: text('recurrence_hint').notNull().default('UNKNOWN'),
+    // Identificador estável da fonte externa (dedup de ingestão). Nulo para reports community.
+    externalId: text('external_id'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => ({ locIdx: index('incidents_location_idx').using('gist', t.location) }),
+  (t) => ({
+    locIdx: index('incidents_location_idx').using('gist', t.location),
+    // Índice único parcial: dedup de fontes externas, mas permite vários sem external_id.
+    externalIdx: uniqueIndex('incidents_external_id_idx')
+      .on(t.externalId)
+      .where(sql`${t.externalId} IS NOT NULL`),
+  }),
 );
 
 export const verifications = pgTable('verifications', {
@@ -285,3 +295,15 @@ export const accessLogs = pgTable(
   },
   (t) => ({ userIdx: index('access_logs_user_idx').on(t.userId, t.createdAt) }),
 );
+
+// Auditoria de cada execução de ingestão (status, contagens e erros).
+export const ingestLogs = pgTable('ingest_logs', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  adapterId: text('adapter_id').notNull(),
+  status: text('status').notNull(), // RUNNING | OK | ERROR
+  recordsFetched: integer('records_fetched').notNull().default(0),
+  recordsUpserted: integer('records_upserted').notNull().default(0),
+  error: text('error'),
+  startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
+  finishedAt: timestamp('finished_at', { withTimezone: true }),
+});

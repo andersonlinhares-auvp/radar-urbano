@@ -39,7 +39,13 @@ await riskQueue.add('hourly', {}, { repeat: { every: 3600_000 } });
 // INGESTION_ENABLED === 'true'. Facebook (best-effort) só com INGESTION_FACEBOOK === 'true'.
 if (process.env.INGESTION_ENABLED === 'true') {
   const every = (min: number) => ({ repeat: { every: min * 60_000 } });
-  await ingestionQueue.add('fogo-cruzado', { adapterId: 'fogo-cruzado' }, every(20));
+  // Fogo Cruzado só é agendado se houver credenciais (senão logaria erro a cada execução).
+  if (process.env.FOGOCRUZADO_EMAIL && process.env.FOGOCRUZADO_PASSWORD) {
+    await ingestionQueue.add('fogo-cruzado', { adapterId: 'fogo-cruzado' }, every(20));
+    console.log('Fogo Cruzado agendado.');
+  } else {
+    console.log('Fogo Cruzado NÃO agendado (defina FOGOCRUZADO_EMAIL/PASSWORD).');
+  }
   await ingestionQueue.add('g1-rio', { adapterId: 'g1-rio' }, every(60));
   await ingestionQueue.add('o-dia', { adapterId: 'o-dia' }, every(60));
   await ingestionQueue.add('extra', { adapterId: 'extra' }, every(60));

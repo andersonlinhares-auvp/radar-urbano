@@ -119,10 +119,10 @@ export const g1RioAdapter = makeNewsAdapter({
 export const oDiaAdapter = makeNewsAdapter({
   id: 'o-dia',
   sourceLabel: 'O Dia',
-  rssUrl: 'https://odia.ig.com.br/rss/rio-de-janeiro.xml',
+  rssUrl: 'https://odia.ig.com.br/rss.xml',
 });
 export const extraAdapter = makeNewsAdapter({
   id: 'extra',
   sourceLabel: 'Extra',
-  rssUrl: 'https://extra.globo.com/rss/casos-de-policia/',
+  rssUrl: 'https://extra.globo.com/rss/extra/',
 });

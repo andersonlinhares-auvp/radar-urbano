@@ -594,6 +594,11 @@ function StepLocation({
       dragRotate: false,
       pitchWithRotate: false,
       touchPitch: false,
+      // Economia de memória (mesma config do mapa principal).
+      maxTileCacheSize: 40,
+      refreshExpiredTiles: false,
+      fadeDuration: 0,
+      antialias: false,
     });
     mapRef.current = map;
     map.dragRotate.disable();

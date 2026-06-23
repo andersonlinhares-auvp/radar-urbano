@@ -164,6 +164,15 @@ export const Map = forwardRef<MapHandle, MapProps>(function Map({ onBboxChange, 
       dragRotate: false,
       pitchWithRotate: false,
       touchPitch: false,
+      // ── Economia de memória (RAM/GPU) ──
+      // Limita o cache de tiles (basemap + heat); o padrão guarda tiles demais.
+      maxTileCacheSize: 60,
+      // Não re-baixa tiles expirados em background (menos texturas retidas).
+      refreshExpiredTiles: false,
+      // Sem fade entre tiles: evita manter 2 conjuntos de texturas durante a transição.
+      fadeDuration: 0,
+      // Antialias off no WebGL reduz uso de memória da GPU.
+      antialias: false,
     });
     mapRef.current = map;
     map.dragRotate.disable();

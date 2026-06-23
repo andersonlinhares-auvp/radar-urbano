@@ -2,8 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { classifyCategory } from './classifier.js';
 
 describe('classifyCategory', () => {
-  it('tiroteio → disparo-arma', () => {
-    expect(classifyCategory('Tiroteio deixa feridos na Maré')).toBe('disparo-arma');
+  it('tiroteio → tiroteio', () => {
+    expect(classifyCategory('Tiroteio deixa feridos na Maré')).toBe('tiroteio');
+  });
+  it('baleado (sem a palavra tiroteio) → disparo-arma', () => {
+    expect(classifyCategory('Homem é baleado em assalto na Penha')).toBe('disparo-arma');
   });
   it('operação policial → confronto-policial', () => {
     expect(classifyCategory('Operação policial no Alemão termina com confronto')).toBe(

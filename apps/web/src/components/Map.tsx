@@ -43,6 +43,14 @@ function buildPopupHTML(item: RecentIncident): string {
         ? `Confirmado por ${item.confirmations} pessoas`
         : 'Nenhuma confirmação ainda';
 
+  const sourceBlock = item.sourceName
+    ? `<div style="margin-top:6px;font-size:11px;color:#5a6470;">Fonte: ${escapeHtml(item.sourceName)}` +
+      (item.sourceUrl && /^https?:\/\//.test(item.sourceUrl)
+        ? ` · <a href="${escapeHtml(item.sourceUrl)}" target="_blank" rel="noopener noreferrer" style="color:#0e5c63;">ver matéria ↗</a>`
+        : '') +
+      `</div>`
+    : '';
+
   return (
     `<div style="font-family:'IBM Plex Sans',sans-serif;width:240px;">` +
     `<div style="height:4px;background:${item.categoryColor ?? '#0e5c63'};"></div>` +
@@ -51,6 +59,7 @@ function buildPopupHTML(item: RecentIncident): string {
     `<div style="margin-top:4px;font-size:12px;color:#5a6470;">${escapeHtml(item.categoryLabel)} · ${escapeHtml(time)}${neighborhoodPart}</div>` +
     `<div style="margin-top:4px;font-size:12px;color:#5a6470;">${escapeHtml(statusText)} · ${escapeHtml(confirmText)}</div>` +
     `<div style="margin-top:6px;display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#11181f;background:#e8f5f3;padding:2px 7px;border-radius:100px;">${escapeHtml(trust)}</div>` +
+    sourceBlock +
     `</div></div>`
   );
 }
@@ -68,6 +77,8 @@ export type RecentIncident = {
   lat: number;
   neighborhood?: string | null;
   confirmations: number;
+  sourceName?: string | null;
+  sourceUrl?: string | null;
 };
 
 export type MapHandle = {

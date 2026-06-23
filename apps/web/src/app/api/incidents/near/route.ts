@@ -19,6 +19,8 @@ interface Row extends Record<string, unknown> {
   occurred_at: string;
   neighborhood: string | null;
   confirmations: number;
+  source_name: string | null;
+  source_url: string | null;
 }
 
 export async function GET(req: Request) {
@@ -36,6 +38,7 @@ export async function GET(req: Request) {
   try {
     const [row] = await db.execute<Row>(sql`
       SELECT i.id, i.ref_code, i.title, i.description, i.status, i.trust_score,
+             i.source_name, i.source_url,
              to_char(i.occurred_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS occurred_at,
              c.label AS category_label, c.color AS category_color,
              nb.name AS neighborhood,
@@ -69,6 +72,8 @@ export async function GET(req: Request) {
         occurredAt: row.occurred_at,
         neighborhood: row.neighborhood ?? null,
         confirmations: Number(row.confirmations),
+        sourceName: row.source_name ?? null,
+        sourceUrl: row.source_url ?? null,
       },
     });
   } catch (err) {

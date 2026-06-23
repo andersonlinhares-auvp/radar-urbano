@@ -22,6 +22,8 @@ interface Row extends Record<string, unknown> {
   lat: number;
   neighborhood: string | null;
   confirmations: number;
+  source_name: string | null;
+  source_url: string | null;
 }
 
 export async function GET(req: Request) {
@@ -55,6 +57,8 @@ export async function GET(req: Request) {
         ST_X(i.location::geometry) AS lng,
         ST_Y(i.location::geometry) AS lat,
         nb.name  AS neighborhood,
+        i.source_name AS source_name,
+        i.source_url  AS source_url,
         (
           SELECT count(*)
           FROM verifications v
@@ -86,6 +90,8 @@ export async function GET(req: Request) {
       lat: Number(row.lat),
       neighborhood: row.neighborhood ?? null,
       confirmations: Number(row.confirmations),
+      sourceName: (row.source_name as string | null) ?? null,
+      sourceUrl: (row.source_url as string | null) ?? null,
     }));
 
     return NextResponse.json({ incidents });

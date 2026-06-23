@@ -35,21 +35,19 @@ new Worker(
 // Recalcula risco a cada hora.
 await riskQueue.add('hourly', {}, { repeat: { every: 3600_000 } });
 
-// Repeatable jobs de ingestão (Fase 1). Os adapters ainda retornam [] (stubs honestos),
-// então o agendamento é inócuo, mas deixa o pipeline pronto. Para evitar poluição em dev,
-// só agenda quando INGESTION_ENABLED === 'true'.
+// Repeatable jobs de ingestão. Para evitar poluição em dev, só agenda quando
+// INGESTION_ENABLED === 'true'. Facebook (best-effort) só com INGESTION_FACEBOOK === 'true'.
 if (process.env.INGESTION_ENABLED === 'true') {
-  // Fontes oficiais/diárias às 06:00 (horário do servidor).
-  await ingestionQueue.add('isp-rj', { adapterId: 'isp-rj' }, { repeat: { pattern: '0 6 * * *' } });
-  await ingestionQueue.add(
-    'data-rio',
-    { adapterId: 'data-rio' },
-    { repeat: { pattern: '0 6 * * *' } },
-  );
-  // Recortes territoriais mudam raramente: semanal (domingo 03:00).
-  await ingestionQueue.add('ibge', { adapterId: 'ibge' }, { repeat: { pattern: '0 3 * * 0' } });
-  await ingestionQueue.add('osm', { adapterId: 'osm' }, { repeat: { pattern: '0 4 * * 0' } });
-  console.log('Repeatable jobs de ingestão agendados (INGESTION_ENABLED=true).');
+  const every = (min: number) => ({ repeat: { every: min * 60_000 } });
+  await ingestionQueue.add('fogo-cruzado', { adapterId: 'fogo-cruzado' }, every(20));
+  await ingestionQueue.add('g1-rio', { adapterId: 'g1-rio' }, every(60));
+  await ingestionQueue.add('o-dia', { adapterId: 'o-dia' }, every(60));
+  await ingestionQueue.add('extra', { adapterId: 'extra' }, every(60));
+  if (process.env.INGESTION_FACEBOOK === 'true') {
+    await ingestionQueue.add('ott-facebook', { adapterId: 'ott-facebook' }, every(60));
+    await ingestionQueue.add('rio-de-nojeira', { adapterId: 'rio-de-nojeira' }, every(60));
+  }
+  console.log('Ingestão agendada ativada.');
 } else {
   console.log('Ingestão agendada desativada (defina INGESTION_ENABLED=true para ativar).');
 }

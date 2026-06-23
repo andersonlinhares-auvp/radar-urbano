@@ -103,10 +103,19 @@ export async function runIngestion(
     const adapter = getAdapter(adapterId);
 
     // b. Busca com timeout + retry. Em falha final, registra ERROR e retorna (falha silenciosa).
+    // Gazetteer de bairros (nome + ponto interno garantido) para adapters de texto.
+    const gazetteer = await db.execute<{ id: string; name: string; lng: number; lat: number }>(sql`
+      SELECT id, name,
+             ST_X(ST_PointOnSurface(geom)) AS lng,
+             ST_Y(ST_PointOnSurface(geom)) AS lat
+      FROM neighborhoods
+    `);
+    const fetchParams = { ...(params ?? {}), neighborhoods: gazetteer };
+
     let raws: RawRecord[];
     try {
       raws = await withRetry(
-        () => withTimeout(adapter.fetch(params), FETCH_TIMEOUT_MS, `fetch ${adapterId}`),
+        () => withTimeout(adapter.fetch(fetchParams), FETCH_TIMEOUT_MS, `fetch ${adapterId}`),
         MAX_RETRIES,
         `fetch ${adapterId}`,
       );
@@ -161,8 +170,9 @@ export async function runIngestion(
               recurrenceCount: 0,
             });
 
-      // Toda ingestão externa entra como PENDING (needsReview reservado para uso futuro).
-      const status = 'PENDING';
+      // Status por fonte: Fogo Cruzado confirma; notícias/Facebook entram como PENDING.
+      const status =
+        normalized.status ?? (normalized.needsReview === false ? 'CONFIRMED' : 'PENDING');
       const refCode = generateRefCode();
       const point = sql`ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography`;
 
@@ -170,19 +180,23 @@ export async function runIngestion(
       await db.execute(sql`
         INSERT INTO incidents
           (ref_code, external_id, category_slug, source_id, title, description,
-           location, neighborhood_id, occurred_at, status, trust_score)
+           location, neighborhood_id, occurred_at, status, trust_score, source_name, source_url)
         VALUES (
           ${refCode}, ${normalized.externalId}, ${normalized.categorySlug}, ${sourceId},
           ${normalized.title}, ${normalized.description ?? null},
           ${point},
           (SELECT id FROM neighborhoods WHERE ST_Contains(geom, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)) LIMIT 1),
-          ${normalized.occurredAt.toISOString()}, ${status}, ${trustScore}
+          ${normalized.occurredAt.toISOString()}, ${status}, ${trustScore},
+          ${normalized.sourceLabel ?? null}, ${normalized.rawUrl ?? null}
         )
         ON CONFLICT (external_id) DO UPDATE SET
           title = EXCLUDED.title,
           trust_score = EXCLUDED.trust_score,
           occurred_at = EXCLUDED.occurred_at,
-          neighborhood_id = EXCLUDED.neighborhood_id
+          neighborhood_id = EXCLUDED.neighborhood_id,
+          status = EXCLUDED.status,
+          source_name = EXCLUDED.source_name,
+          source_url = EXCLUDED.source_url
       `);
       upserted++;
     }

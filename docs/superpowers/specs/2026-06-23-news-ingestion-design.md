@@ -26,6 +26,10 @@ ingestão, ser tolerante a falhas (uma fonte fora do ar não derruba as outras) 
   os adapters de Facebook ficam **desligados por padrão**.
 - **LGPD:** guardar apenas manchete/resumo + link; não armazenar dados pessoais de terceiros além
   do que está na manchete pública. Incidentes de notícia/Facebook entram com `needsReview=true`.
+- **Janela temporal recente:** não traz histórico de anos. A carga inicial vai apenas do **início
+  do ano corrente** (ex.: 2026-01-01) para frente, e depois a coleta é **incremental** (só o novo).
+  Configurável via `INGESTION_SINCE` (data ISO; default = `1º de janeiro do ano atual`). Isso reduz
+  drasticamente o volume e o tempo de coleta. (O mapa ao vivo e o risco já priorizam ~30 dias.)
 
 ## 3. Fontes (v1)
 
@@ -45,8 +49,9 @@ específica `INGESTION_FACEBOOK=true` for definida (best-effort; pode render pou
 
 - **Auth:** login (e-mail/senha de conta gratuita) → Bearer token; cache do token em memória com
   renovação. Credenciais via env `FOGOCRUZADO_EMAIL` / `FOGOCRUZADO_PASSWORD`.
-- **Endpoint:** `GET /occurrences` com `idState` (RJ), `initialdate`/`finaldate` (janela desde a
-  última execução), paginação (`page`/`take`).
+- **Endpoint:** `GET /occurrences` com `idState` (RJ), `initialdate`/`finaldate`, paginação
+  (`page`/`take`). **Carga inicial:** `initialdate = INGESTION_SINCE` (default 1º jan do ano atual);
+  execuções seguintes só pegam o que há de novo (incremental por data/dedup). Sem backfill de anos.
 - **Campos usados:** `id`, `address`, `latitude`, `longitude`, `neighborhood`, `date`, `mainReason`.
 - **Mapeamento de categoria:** ocorrências do Fogo Cruzado → `disparo-arma` / `tiroteio` /
   `confronto-policial` conforme `mainReason` (operação policial vs disparo civil); fallback

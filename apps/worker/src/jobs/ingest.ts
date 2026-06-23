@@ -189,7 +189,7 @@ export async function runIngestion(
           ${normalized.occurredAt.toISOString()}, ${status}, ${trustScore},
           ${normalized.sourceLabel ?? null}, ${normalized.rawUrl ?? null}
         )
-        ON CONFLICT (external_id) DO UPDATE SET
+        ON CONFLICT (external_id) WHERE external_id IS NOT NULL DO UPDATE SET
           title = EXCLUDED.title,
           trust_score = EXCLUDED.trust_score,
           occurred_at = EXCLUDED.occurred_at,

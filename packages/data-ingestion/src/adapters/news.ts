@@ -52,6 +52,8 @@ interface NewsConfig {
   id: string;
   sourceLabel: string;
   rssUrl: string;
+  /** Se definido, só aceita matérias cujo link casa este padrão (evita notícias de outros estados). */
+  localePattern?: RegExp;
 }
 
 export function makeNewsAdapter(cfg: NewsConfig): SourceAdapter {
@@ -66,6 +68,8 @@ export function makeNewsAdapter(cfg: NewsConfig): SourceAdapter {
       const items = parseRss(xml).slice(0, MAX_ITEMS);
       const out: RawRecord[] = [];
       for (const item of items) {
+        // Filtro de localidade: descarta matérias de outros estados (ex.: G1 só /rj/).
+        if (cfg.localePattern && !cfg.localePattern.test(item.link)) continue;
         const text = `${item.title} ${item.description}`;
         const category = classifyCategory(text);
         if (!category) continue;
@@ -110,6 +114,7 @@ export const g1RioAdapter = makeNewsAdapter({
   id: 'g1-rio',
   sourceLabel: 'G1 Rio',
   rssUrl: 'https://g1.globo.com/rss/g1/rio-de-janeiro/',
+  localePattern: /\/rj\//,
 });
 export const oDiaAdapter = makeNewsAdapter({
   id: 'o-dia',

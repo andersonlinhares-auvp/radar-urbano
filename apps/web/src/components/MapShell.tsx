@@ -1,10 +1,42 @@
+// apps/web/src/components/MapShell.tsx
 'use client';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import Link from 'next/link';
 import { IconRail } from './IconRail';
-import { Map } from './Map';
+import { Map, type MapHandle, type RecentIncident } from './Map';
+import { IncidentCard } from './map/IncidentCard';
 
 export function MapShell() {
   const [layersOpen, setLayersOpen] = useState(false);
+  const [recent, setRecent] = useState<RecentIncident[]>([]);
+  const mapRef = useRef<MapHandle>(null);
+  const fetchingRef = useRef(false);
+  const pendingBboxRef = useRef<[number, number, number, number] | null>(null);
+
+  function fetchRecent(bbox: [number, number, number, number]) {
+    fetchingRef.current = true;
+    pendingBboxRef.current = null;
+    fetch(`/api/incidents/recent?bbox=${bbox.join(',')}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((data: { incidents: RecentIncident[] }) => setRecent(data.incidents))
+      .catch(() => {
+        /* silently ignore auth/rate-limit errors */
+      })
+      .finally(() => {
+        fetchingRef.current = false;
+        if (pendingBboxRef.current) {
+          fetchRecent(pendingBboxRef.current);
+        }
+      });
+  }
+
+  function handleBboxChange(bbox: [number, number, number, number]) {
+    if (fetchingRef.current) {
+      pendingBboxRef.current = bbox;
+      return;
+    }
+    fetchRecent(bbox);
+  }
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-superficie">
@@ -12,7 +44,7 @@ export function MapShell() {
 
       {/* Map column */}
       <div className="relative flex-1">
-        <Map />
+        <Map ref={mapRef} onBboxChange={handleBboxChange} markers={recent} />
 
         {/* Top floating controls */}
         <div className="pointer-events-none absolute left-4 right-4 top-4 flex flex-wrap items-start gap-2.5">
@@ -67,20 +99,55 @@ export function MapShell() {
         <div className="absolute bottom-4 left-4 min-w-[210px] rounded-md border border-linha bg-superficie/95 p-3.5 shadow-md backdrop-blur">
           <div className="mb-2.5 font-mono text-[10px] tracking-wide text-[#8a857a]">LEGENDA</div>
           <div className="flex flex-col gap-[7px] text-xs text-[#3a434c]">
-            <div className="flex items-center gap-2">
-              <span
-                className="h-2 w-6 rounded-[2px]"
-                style={{
-                  background: 'linear-gradient(90deg,#3fb6a8,#a9cf7e,#e0a93b,#d2702f,#a8332f)',
-                }}
-              />{' '}
-              Densidade de risco
+            {/* Heatmap scale */}
+            <div>
+              <div className="flex items-center gap-2">
+                <span
+                  className="h-2 w-24 rounded-[2px]"
+                  style={{
+                    background: 'linear-gradient(90deg,#3fb6a8,#a9cf7e,#e0a93b,#d2702f,#a8332f)',
+                  }}
+                />
+              </div>
+              <div className="mt-0.5 flex justify-between font-mono text-[9px] text-[#8a857a]">
+                <span>Baixa</span>
+                <span>Alta</span>
+              </div>
+              <div className="mt-0.5 text-[10px] text-[#8a857a]">Densidade de risco</div>
+            </div>
+            {/* Category pin legend */}
+            <div className="mt-1 flex flex-col gap-1">
+              {[
+                { color: '#A8332F', label: 'Violência armada / Assalto grave' },
+                { color: '#D2702F', label: 'Roubo / Tentativa' },
+                { color: '#E0A93B', label: 'Furto / Vandalismo' },
+                { color: '#3FB6A8', label: 'Mobilidade / Outros' },
+              ].map(({ color, label }) => (
+                <div key={color} className="flex items-center gap-2">
+                  <span
+                    className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
+                    style={{ background: color }}
+                  />
+                  <span className="text-[10px] text-[#3a434c]">{label}</span>
+                </div>
+              ))}
             </div>
             <div className="mt-1 text-[11px] text-[#8a857a]">
               Clique no mapa para ver a ocorrência mais próxima.
             </div>
           </div>
         </div>
+
+        {/* Botão flutuante: reportar ocorrência */}
+        <Link
+          href="/reportar"
+          className="absolute bottom-20 right-4 z-10 flex items-center gap-2 rounded-full bg-petroleo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:bg-petroleo-500 active:bg-petroleo-900"
+        >
+          <span aria-hidden className="text-lg leading-none">
+            +
+          </span>
+          Reportar algo
+        </Link>
 
         {/* Bottom-right scale + attribution */}
         <div className="pointer-events-none absolute bottom-4 right-16 text-right">
@@ -93,6 +160,27 @@ export function MapShell() {
           </div>
         </div>
       </div>
+
+      {/* Right panel — últimas ocorrências */}
+      <aside className="flex w-72 flex-col border-l border-linha bg-superficie">
+        <div className="flex items-center justify-between border-b border-linha px-4 py-3">
+          <span className="font-mono text-[10px] tracking-wide text-[#8a857a]">
+            ÚLTIMAS OCORRÊNCIAS · {recent.length}
+          </span>
+        </div>
+        <ul className="flex-1 overflow-y-auto">
+          {recent.length === 0 && (
+            <li className="px-4 py-6 text-center text-xs text-[#8a857a]">
+              Mova o mapa para carregar ocorrências da área visível.
+            </li>
+          )}
+          {recent.map((item) => (
+            <li key={item.id}>
+              <IncidentCard item={item} onClick={() => mapRef.current?.showIncident(item)} />
+            </li>
+          ))}
+        </ul>
+      </aside>
     </div>
   );
 }

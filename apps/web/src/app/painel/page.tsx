@@ -95,9 +95,9 @@ export default async function PainelPage() {
             critical
           />
           <KpiCard
-            label="BAIRROS MONITORADOS"
-            value={stats.monitoredNeighborhoods}
-            hint={`${stats.monitoredNeighborhoods} de ${stats.monitoredNeighborhoods} · 100%`}
+            label="BAIRROS COM OCORRÊNCIA"
+            value={stats.neighborhoodsActive24h.toLocaleString('pt-BR')}
+            hint="bairros com ao menos 1 ocorrência nas últimas 24h"
           />
         </div>
 

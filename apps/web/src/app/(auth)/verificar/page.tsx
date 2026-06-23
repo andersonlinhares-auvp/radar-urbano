@@ -1,62 +1,120 @@
+// apps/web/src/app/(auth)/verificar/page.tsx
 'use client';
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { AuthLayout, CodeInput, AuthButton, ProgressStepper } from '@/components/auth';
 
 function VerificarForm() {
   const router = useRouter();
   const email = useSearchParams().get('email') ?? '';
   const [code, setCode] = useState('');
+  const [erro, setErro] = useState('');
   const [msg, setMsg] = useState('');
+  const [loadingVerify, setLoadingVerify] = useState(false);
+  const [loadingResend, setLoadingResend] = useState(false);
 
   async function verificar(e: React.FormEvent) {
     e.preventDefault();
-    const res = await fetch('/api/verify-email', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email, code }),
-    });
-    if (res.ok) router.push('/entrar');
-    else setMsg((await res.json()).error ?? 'Código inválido.');
+    setErro('');
+    setMsg('');
+    setLoadingVerify(true);
+    try {
+      const res = await fetch('/api/verify-email', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email, code }),
+      });
+      if (res.ok) {
+        router.push('/entrar');
+      } else {
+        const json = await res.json().catch(() => ({}));
+        setErro(json.error ?? 'Código inválido.');
+      }
+    } finally {
+      setLoadingVerify(false);
+    }
   }
+
   async function reenviar() {
-    const res = await fetch('/api/verify-email/resend', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
-    setMsg(res.ok ? 'Novo código enviado.' : ((await res.json()).error ?? 'Erro.'));
+    setMsg('');
+    setErro('');
+    setLoadingResend(true);
+    try {
+      const res = await fetch('/api/verify-email/resend', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (res.ok) {
+        setMsg('Novo código enviado. Verifique seu e-mail.');
+      } else {
+        const json = await res.json().catch(() => ({}));
+        setErro(json.error ?? 'Erro ao reenviar. Tente novamente.');
+      }
+    } finally {
+      setLoadingResend(false);
+    }
   }
 
   return (
-    <>
-      <p className="text-sm text-ardosia">Enviamos um código de 6 dígitos para {email}.</p>
-      <form onSubmit={verificar} className="flex flex-col gap-3">
-        <input
-          className="rounded border border-linha p-3 text-center font-mono text-xl tracking-widest"
-          inputMode="numeric"
-          maxLength={6}
-          placeholder="000000"
+    <div className="flex flex-col gap-6">
+      <ProgressStepper currentStep={2} />
+
+      {email && (
+        <p className="text-sm text-ardosia leading-relaxed">
+          Enviamos um código de 6 dígitos para{' '}
+          <span className="font-semibold text-tinta">{email}</span>.
+        </p>
+      )}
+
+      <form onSubmit={verificar} className="flex flex-col gap-5">
+        <CodeInput
           value={code}
-          onChange={(e) => setCode(e.target.value)}
-          required
+          onChange={setCode}
+          error={erro || undefined}
+          disabled={loadingVerify}
         />
-        {msg && <p className="text-sm text-ardosia">{msg}</p>}
-        <button className="rounded bg-petroleo-600 p-3 font-semibold text-white">Verificar</button>
+
+        {msg && (
+          <p role="status" className="text-xs text-petroleo-600">
+            {msg}
+          </p>
+        )}
+
+        <AuthButton
+          variant="primary"
+          type="submit"
+          loading={loadingVerify}
+          disabled={loadingResend || code.length !== 6}
+        >
+          Verificar e-mail
+        </AuthButton>
       </form>
-      <button onClick={reenviar} className="text-sm text-petroleo-600">
-        Reenviar código
-      </button>
-    </>
+
+      <div className="flex items-center justify-center gap-2">
+        <span className="text-sm text-ardosia">Não recebeu o código?</span>
+        <button
+          type="button"
+          onClick={reenviar}
+          disabled={loadingResend || loadingVerify}
+          className="text-sm font-semibold text-petroleo-600 hover:text-petroleo-500 transition-colors disabled:opacity-50"
+        >
+          {loadingResend ? 'Enviando...' : 'Reenviar'}
+        </button>
+      </div>
+    </div>
   );
 }
 
 export default function VerificarPage() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-4 p-6">
-      <h1 className="font-serif text-3xl text-petroleo-600">Verificar e-mail</h1>
-      <Suspense fallback={<p className="text-sm text-ardosia">Carregando...</p>}>
+    <AuthLayout
+      title="Verifique seu e-mail"
+      subtitle="Insira o código que enviamos para confirmar sua identidade."
+    >
+      <Suspense fallback={<div className="text-sm text-ardosia">Carregando...</div>}>
         <VerificarForm />
       </Suspense>
-    </main>
+    </AuthLayout>
   );
 }

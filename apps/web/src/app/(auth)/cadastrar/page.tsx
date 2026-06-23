@@ -1,55 +1,102 @@
+// apps/web/src/app/(auth)/cadastrar/page.tsx
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+  AuthLayout,
+  InputField,
+  PasswordField,
+  AuthButton,
+  ProgressStepper,
+} from '@/components/auth';
 
 export default function CadastrarPage() {
   const router = useRouter();
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [erro, setErro] = useState('');
+  const [loading, setLoading] = useState(false);
 
   async function cadastrar(e: React.FormEvent) {
     e.preventDefault();
     setErro('');
-    const res = await fetch('/api/register', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(form),
-    });
-    if (res.ok) router.push(`/verificar?email=${encodeURIComponent(form.email)}`);
-    else setErro((await res.json()).error ?? 'Erro ao cadastrar.');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        router.push(`/verificar?email=${encodeURIComponent(form.email)}`);
+      } else {
+        const json = await res.json().catch(() => ({}));
+        setErro(json.error ?? 'Erro ao cadastrar. Tente novamente.');
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-4 p-6">
-      <h1 className="font-serif text-3xl text-petroleo-600">Criar conta</h1>
-      <form onSubmit={cadastrar} className="flex flex-col gap-3">
-        <input
-          className="rounded border border-linha p-3"
-          placeholder="Nome"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          required
-        />
-        <input
-          className="rounded border border-linha p-3"
-          type="email"
-          placeholder="E-mail"
-          value={form.email}
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
-          required
-        />
-        <input
-          className="rounded border border-linha p-3"
-          type="password"
-          placeholder="Senha (mín. 8)"
-          value={form.password}
-          onChange={(e) => setForm({ ...form, password: e.target.value })}
-          required
-          minLength={8}
-        />
-        {erro && <p className="text-sm text-risco-critico">{erro}</p>}
-        <button className="rounded bg-petroleo-600 p-3 font-semibold text-white">Cadastrar</button>
-      </form>
-    </main>
+    <AuthLayout
+      title="Criar conta"
+      subtitle="Junte-se à comunidade de inteligência urbana colaborativa."
+    >
+      <div className="flex flex-col gap-6">
+        <ProgressStepper currentStep={1} />
+
+        <form onSubmit={cadastrar} className="flex flex-col gap-4">
+          <InputField
+            id="name"
+            label="Nome"
+            type="text"
+            placeholder="Seu nome completo"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            required
+            autoComplete="name"
+          />
+          <InputField
+            id="email"
+            label="E-mail"
+            type="email"
+            placeholder="voce@exemplo.com"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            required
+            autoComplete="email"
+            error={erro || undefined}
+          />
+          <PasswordField
+            id="password"
+            label="Senha"
+            value={form.password}
+            onChange={(e) => setForm({ ...form, password: e.target.value })}
+            required
+            minLength={8}
+            autoComplete="new-password"
+          />
+          {/* General form error */}
+          {erro && (
+            <p role="alert" className="text-xs text-risco-critico">
+              {erro}
+            </p>
+          )}
+          <AuthButton variant="primary" type="submit" loading={loading} className="mt-1">
+            Criar conta
+          </AuthButton>
+        </form>
+
+        <p className="text-center text-sm text-ardosia">
+          Já tem uma conta?{' '}
+          <a
+            href="/entrar"
+            className="text-petroleo-600 font-semibold hover:text-petroleo-500 transition-colors"
+          >
+            Entrar
+          </a>
+        </p>
+      </div>
+    </AuthLayout>
   );
 }

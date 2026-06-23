@@ -13,6 +13,7 @@ export interface NormalizedIncident {
   sourceLabel?: string;
   rawUrl?: string;
   needsReview?: boolean;
+  status?: 'PENDING' | 'CONFIRMED';
 }
 
 export interface RawRecord {
